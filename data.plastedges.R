@@ -10,5 +10,6 @@ d.geno <- d.plastedges %>%
 dim(d.geno)
 d.geno
 
+
 ggplot(d.geno, aes(x = latitude, y = ER)) + 
   geom_point()
