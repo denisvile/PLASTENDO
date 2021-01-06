@@ -1,6 +1,6 @@
 # *************************************************
 # Experimental design ----
-# PHENOPSIS C2M52
+# PHENOPSIS C3M42
 # *************************************************
 
 geno <- d.geno[order(d.geno$latitude), 1:6]
@@ -39,5 +39,5 @@ pots %>%
 
 # Save data frame for Excel handling and sowing procedure ----
 
-write.csv2(pots, file="./data/pots_C2M52.csv", row.names = F)
+write.csv2(pots, file="./data/pots_C3M42.csv", row.names = F)
 
