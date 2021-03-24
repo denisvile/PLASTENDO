@@ -10,5 +10,7 @@ d.geno <- d.plastedges %>%
 dim(d.geno)
 d.geno
 
+write.csv(d.geno, "./data/data.genotypes.csv")
+
 ggplot(d.geno, aes(x = latitude, y = ER)) + 
   geom_point()
