@@ -23,10 +23,14 @@ gp.ilg <- ggplot(data = ilg, aes(y = Area.total.mm2, x = day)) +
   geom_point()
 gp.ilg
 
-gp.ilg %+% subset(ilg, leafType %in% c("F-3")) +
-  facet_wrap(.~ leafType+idGenotype) + 
+pdf("./figures/L8_growth_8genotypes.pdf", 6, 8)
+gp.ilg %+% subset(ilg, leafType %in% c("F8")) +
+  facet_wrap(.~ idGenotype, ncol=2) + 
   aes(colour=factor(idPot)) +
-  geom_smooth(se=F)
+  geom_smooth(se=F) +
+  theme(legend.position = "none")
+dev.off()
+system("open ./figures/L8_growth_8genotypes.pdf")
 
 
 gp.ilg %+% subset(ilg, idGenotype %in% c("Cdm 0", "Com-1")) +
