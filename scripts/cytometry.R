@@ -8,9 +8,16 @@
 # source("cytometry.libraries.r")
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+# Pots ids ----
+# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
+idPots <- read.xls(xls = "./data/pot_C3M42.xlsx")
+
+
+# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Sample ids ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-ids <- read.xls(xls = "../data/idSamples.xlsx")
+ids <- read.xls(xls = "/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/cytometry_sample_IDs.xlsx")
+
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data ----
@@ -208,11 +215,11 @@ print(gg2)
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 1/ calculate mean limits of each peak / day of measurement ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-df.m <- melt(d1[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7")], measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7"))
-df.m$mM <- factor(df.m$variable, labels=rep(c("min","max"), 7))
+df.m <- melt(d1[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8", "min9", "max9")], measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8", "min9", "max9"))
+df.m$mM <- factor(df.m$variable, labels=rep(c("min","max"), 9))
 droplevels(df.m)
 
-gp2.all <- ggplot(df.m, aes(y=value, x=variable, fill=mM)) + geom_boxplot() + scale_y_log10() + ylab("") + xlab("Peak limits") + coord_flip()
+gp2.all <- ggplot(df.m, aes(y=value, x=variable, fill=mM)) + geom_boxplot() + scale_y_log10(limits=c(1, 1000)) + ylab("") + xlab("Peak limits") + coord_flip()
 
 peak.limits <- aggregate(value ~ variable, data=df.m, FUN = summary)
 
@@ -226,8 +233,7 @@ gp2.all + geom_hline(data=data.frame(yint=peak.limits[, 2][, "1st Qu."]), aes(yi
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 pl.all <- peak.limits[, 2]
 peak.lim.all <- list(
-  peak1=c(pl.all[1, "Min."], mean(c(pl.all[2, "3rd Qu."], 
-                                    pl.all[3,"1st Qu."]))),
+  peak1=c(pl.all[1, "Min."], mean(c(pl.all[2, "3rd Qu."], pl.all[3,"1st Qu."]))),
   peak2=c(mean(c(pl.all[2, "3rd Qu."], pl.all[3,"1st Qu."])), 
           mean(c(pl.all[4, "3rd Qu."], pl.all[5,"1st Qu."]))),
   peak3=c(mean(c(pl.all[4, "3rd Qu."], pl.all[5,"1st Qu."])), 
@@ -236,61 +242,22 @@ peak.lim.all <- list(
           mean(c(pl.all[8, "3rd Qu."], pl.all[9,"1st Qu."]))),
   peak5=c(mean(c(pl.all[8, "3rd Qu."], pl.all[9,"1st Qu."])),
           mean(c(pl.all[10, "3rd Qu."], pl.all[11,"1st Qu."]))),
-  peak6=c(mean(c(pl.all[10, "3rd Qu."], pl.all[11,"1st Qu."])), 
-          pl.all[11, "Max."]),
-  peak7=c(pl.all[11, "Max."], pl.all[12, "Max."])
+  peak6=c(mean(c(pl.all[10, "3rd Qu."], pl.all[11,"1st Qu."])),
+          mean(c(pl.all[12, "3rd Qu."], pl.all[13,"1st Qu."]))),
+  peak7=c(mean(c(pl.all[12, "3rd Qu."], pl.all[13,"1st Qu."])),
+          mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."]))),
+  peak8=c(mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."])), pl.all[17, "Max."]),
+  peak9=c(pl.all[17, "Max."], pl.all[18, "Max."])
 )
 pl1.all <- melt(as.data.frame(peak.lim.all))
-
-pl <- peak.limits[1:12, 3]
-peak.lim1 <- list(peak1=c(pl[1, "Min."], mean(c(pl[2, "3rd Qu."], pl[3,"1st Qu."]))),
-                  peak2=c(mean(c(pl[2, "3rd Qu."], pl[3,"1st Qu."])), 
-                          mean(c(pl[4, "3rd Qu."], pl[5,"1st Qu."]))),
-                  peak3=c(mean(c(pl[4, "3rd Qu."], pl[5,"1st Qu."])), 
-                          mean(c(pl[6, "3rd Qu."], pl[7,"1st Qu."]))),
-                  peak4=c(mean(c(pl[6, "3rd Qu."], pl[7,"1st Qu."])),
-                          mean(c(pl[8, "3rd Qu."], pl[9,"1st Qu."]))),
-                  peak5=c(mean(c(pl[8, "3rd Qu."], pl[9,"1st Qu."])),
-                          mean(c(pl[10, "3rd Qu."], pl[11,"1st Qu."]))),
-                  peak6=c(mean(c(pl[10, "3rd Qu."], pl[11,"1st Qu."])), 
-                          pl[11, "Max."]),
-                  peak7=c(pl[11, "Max."], pl[14, "Max."])
-)
-pl1. <- melt(as.data.frame(peak.lim1))
-
-peak.lim1.manual <- list(peak1=c(29090, 80000),
-                         peak2=c(80000, 180000),
-                         peak3=c(180000, 360000),
-                         peak4=c(360000, 720000),
-                         peak5=c(720000, 1440000),
-                         peak6=c(1440000, 2500000),
-                         peak7=c(2500000, 2771000)
-)
-pl1.manual <- melt(as.data.frame(peak.lim1.manual))
-
-pl2 <- peak.limits[15:26, 3]
-peak.lim2 <- list(peak1=c(pl2[1, "Min."], 
-                          mean(c(pl2[2, "3rd Qu."], pl2[3,"1st Qu."]))),
-                  peak2=c(mean(c(pl2[2, "3rd Qu."], pl2[3,"1st Qu."])), 
-                          mean(c(pl2[4, "3rd Qu."], pl2[5,"1st Qu."]))),
-                  peak3=c(mean(c(pl2[4, "3rd Qu."], pl2[5,"1st Qu."])), 
-                          mean(c(pl2[6, "3rd Qu."], pl2[7,"1st Qu."]))),
-                  peak4=c(mean(c(pl2[6, "3rd Qu."], pl2[7,"1st Qu."])),
-                          mean(c(pl2[8, "3rd Qu."], pl2[9,"1st Qu."]))),
-                  peak5=c(mean(c(pl2[8, "3rd Qu."], pl2[9,"1st Qu."])), 
-                          mean(c(pl2[10, "3rd Qu."], pl2[11,"1st Qu."]))),
-                  peak6=c(mean(c(pl2[10, "3rd Qu."], pl2[11,"1st Qu."])), 
-                          pl2[12, "Max."])
-)
-pl2. <- melt(as.data.frame(peak.lim2))
-
+gp2.all + geom_hline(data=pl1.all, aes(yintercept=value), col="blue") + theme_bw()
 
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 1.b/ Plot global peak limits ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 pdf("./figures/estimatedPeakLimits_boxplots.pdf", 7, 7)
-gp2.all + geom_hline(data=pl1.all, aes(yintercept=value), col="gray") + theme_bw() 
+gp2.all + geom_hline(data=pl1.all, aes(yintercept=value), col="blue") + theme_bw() 
 dev.off()
 system("open ./figures/estimatedPeakLimits_boxplots.pdf")
 
@@ -306,30 +273,79 @@ rectGate1.all <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.all$peak1)
 # 3/ use these limits to extract peak % ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 
-fres00 <- filter(dat[, ], filter=rectGate1.all)
+fres00 <- filter(dat[1:622, ], filter=rectGate1.all)
 cycleProportion.all <- toTable(summary(fres00))
-for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7")) {
+for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8", "peak9")) {
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.all[[i]])
-  fres00 <- filter(dat[, ], filter=rectGate.i)
+  fres00 <- filter(dat[1:622, ], filter=rectGate.i)
   cycleProportion.all <- rbind(cycleProportion.all, toTable(summary(fres00)))
 }
 
-cycleProportion.all$ploidy <- factor(cycleProportion.all$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C"))
+cycleProportion.all$ploidy <- factor(cycleProportion.all$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C", "x256C"))
 cycleProportion.all.wide <- dcast(cycleProportion.all[, c("sample", "ploidy", "p")], formula=sample~ploidy)
 cycleProportion.all.wide[is.na(cycleProportion.all.wide$x128C), "x128C"] <- 0
-
+cycleProportion.all.wide[is.na(cycleProportion.all.wide$x128C), "x256C"] <- 0
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate new cycle value (endoreduplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # The two periods of measurement treated conjointly ----
 dfCVall <- within(data = cycleProportion.all.wide, {
-  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C)/(x2C + x4C + x8C + x16C + x32C + x64C)
+  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C + 7*x256C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C + x256C)
 })
+dfCVall$cycleValue
+dfCVall <- dfCVall %>%
+  left_join(ids, by=c("sample"="fileName")) %>%
+  left_join(idPots)
 
-dfCVall$names <- data.frame(do.call(rbind, strsplit(as.character(dfCVall$sample), split=' ', fixed=T)))[, 2]
-dfCVall$names <- data.frame(do.call(rbind, strsplit(as.character(dfCVall$names), split=".", fixed=T)))[, 1]
-dfCVall$idGen <- substr(as.character(dfCVall$names), 3, 5)
+dfCVall$tissueType.ord <- factor(dfCVall$tissueType, 
+                             levels = c("f6", "f8", "F8", "f30"), 
+                             labels = c("Seedling_Leaf5","Leaf_8", "Leaf_8", "Leaf_30"))
 
+dfCVall[dfCVall$tissueType.ord=="Seedling@Leaf5", "watering"] <- "WW"
+dfCVall$watering <- factor(dfCVall$watering, levels = c("WW", "WD"))
+
+CV.mean <- subset(dfCVall[1:622,]) %>%
+  select(nameGen, tissueType.ord, watering, cycleValue) %>%
+  group_by(nameGen, tissueType.ord, watering) %>%
+  summarize(CVmean = mean(cycleValue))
+
+CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, mean)
+
+dfCVall$nameGen.OrderedSeedling <- as.factor(dfCVall$nameGen)
+
+pdf("./figures/cycleValue_30_genotypes.pdf", 12, 8)
+ggplot(data=dfCVall[1:622,], aes(y=cycleValue, x=tissueType.ord, colour=watering)) + geom_boxplot() + 
+  facet_wrap(.~nameGen)
+
+ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Seedling_Leaf5")), 
+       aes(y=cycleValue, x=nameGen.OrderedSeedling)) +
+  geom_boxplot() + theme(axis.text.x = element_text(angle=90))
+
+ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_8")), 
+       aes(y=cycleValue, x=nameGen, fill=watering)) +
+  geom_boxplot()  + theme(axis.text.x = element_text(angle=90))
+
+ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_30")), 
+       aes(y=cycleValue, x=nameGen, fill=watering)) +
+  geom_boxplot() + theme(axis.text.x = element_text(angle=90))
+
+dev.off()
+system("open ./figures/cycleValue_30_genotypes.pdf")
+
+subset(dfCVall[1:622,], x256C > 0 )
+
+gp.corr <- ggplot(data=CV.mean.wide, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
+  geom_point() + geom_smooth(method = lm, se=F) #+ geom_abline(slope = 1, intercept = 0)
+
+pdf("./figures/cycleValue_30_genotypes_correlations.pdf", 8, 7)
+gp.corr + geom_abline(slope = 1, intercept = 0)
+gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_8_WD)
+gp.corr + aes(x = Leaf_8_WW, y = Leaf_8_WD) + geom_abline(slope = 1, intercept = 0)
+gp.corr + aes(x = Leaf_30_WW, y = Leaf_30_WD) + geom_abline(slope = 1, intercept = 0)
+gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WW) 
+gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WD) 
+dev.off()
+system("open ./figures/cycleValue_30_genotypes_correlations.pdf")
 
 
 
