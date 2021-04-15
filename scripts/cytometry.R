@@ -313,17 +313,31 @@ CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, mean)
 
 dfCVall$nameGen.OrderedSeedling <- as.factor(dfCVall$nameGen)
 
+dfCVall$nameGen.OrderedSeedling <- factor(dfCVall$nameGen.OrderedSeedling,
+                                          levels =levels(dfCVall$nameGen.OrderedSeedling)[order(CV.mean.wide$Seedling_Leaf5_WW)])
+
+dfCVall$nameGen.OrderedL8_WW <- as.factor(dfCVall$nameGen)
+dfCVall$nameGen.OrderedL8_WW <- factor(dfCVall$nameGen.OrderedL8_WW,
+                                          levels =levels(dfCVall$nameGen.OrderedL8_WW)[order(CV.mean.wide$Leaf_8_WW)])
+
 pdf("./figures/cycleValue_30_genotypes.pdf", 12, 8)
 ggplot(data=dfCVall[1:622,], aes(y=cycleValue, x=tissueType.ord, colour=watering)) + geom_boxplot() + 
   facet_wrap(.~nameGen)
 
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Seedling_Leaf5")), 
        aes(y=cycleValue, x=nameGen.OrderedSeedling)) +
-  geom_boxplot() + theme(axis.text.x = element_text(angle=90))
+  geom_boxplot(outlier.alpha = 0) +
+  geom_point(size = 1) +
+  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
 
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_8")), 
-       aes(y=cycleValue, x=nameGen, fill=watering)) +
-  geom_boxplot()  + theme(axis.text.x = element_text(angle=90))
+       aes(y=cycleValue, x=nameGen.OrderedL8_WW, fill=watering)) +
+  geom_boxplot(outlier.alpha = 0) +
+  xlab("Accessions (ordered by L8_WW CV") +
+  ylab("Cycle value") +
+  scale_fill_manual(values=c("#386FA4", "#84D2F6")) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
 
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_30")), 
        aes(y=cycleValue, x=nameGen, fill=watering)) +

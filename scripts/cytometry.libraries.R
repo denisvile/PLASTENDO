@@ -10,6 +10,10 @@
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
+BiocManager::install(version = "3.12")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
 BiocManager::install()
 BiocManager::install(c("flowClust", "openCyto"))
 # Load packages
