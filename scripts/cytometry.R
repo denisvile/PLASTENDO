@@ -12,7 +12,6 @@
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 idPots <- read.xls(xls = "./data/pot_C3M42.xlsx")
 
-
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Sample ids ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
@@ -83,7 +82,7 @@ ggplot(df, aes(x=lgDAPI)) +
   stat_density(geom="line", color="red")
 
 pdf("./figures/Distribution_DAPI_filter.pdf")
-densityplot(~ `lgDAPI`, dat[4,][[1]], filter=curv1Filter("lgDAPI", bwFac=0.4, gridsize = rep(401,2)), xlim=c(0, 4))
+densityplot(~ `lgDAPI`, dat[4,][[1]], filter=curv1Filter("lgDAPI", bwFac=0.8, gridsize = rep(401,2)), xlim=c(0, 4))
 dev.off()
 system(paste("open","./figures/Distribution_DAPI_filter.pdf"))
 
@@ -91,7 +90,7 @@ system(paste("open","./figures/Distribution_DAPI_filter.pdf"))
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.48)) # ID 623 excluded because not obtained with same scale
+res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.48)) # ID 623 excluded because not obtained with same scale (and it is a duplicate sample)
 resSum <- summary(res)
 
 dfRes <- toTable(resSum)
@@ -192,6 +191,8 @@ gg1 <- ggplot(d1, aes(x=min1, y=num)) + scale_x_log10() +
   geom_segment(aes(x=min5, xend=max5, ystart=num, yend=num), col="violet") +
   geom_segment(aes(x=min6, xend=max6, ystart=num, yend=num), col="grey") +
   geom_segment(aes(x=min7, xend=max7, ystart=num, yend=num), col="yellow") +
+  geom_segment(aes(x=min8, xend=max8, ystart=num, yend=num), col="orange") +
+  geom_segment(aes(x=min9, xend=max9, ystart=num, yend=num), col="black") +
   xlab("Fluorescence") + ylab("Sample") + theme_bw()
 print(gg1)
 #print(gg1 + facet_wrap(~idAccession))
@@ -301,7 +302,7 @@ dfCVall$tissueType.ord <- factor(dfCVall$tissueType,
                              levels = c("f6", "f8", "F8", "f30"), 
                              labels = c("Seedling_Leaf5","Leaf_8", "Leaf_8", "Leaf_30"))
 
-dfCVall[dfCVall$tissueType.ord=="Seedling@Leaf5", "watering"] <- "WW"
+dfCVall[dfCVall$tissueType.ord=="Seedling_Leaf5", "watering"] <- "WW"
 dfCVall$watering <- factor(dfCVall$watering, levels = c("WW", "WD"))
 
 CV.mean <- subset(dfCVall[1:622,]) %>%
@@ -309,7 +310,7 @@ CV.mean <- subset(dfCVall[1:622,]) %>%
   group_by(nameGen, tissueType.ord, watering) %>%
   summarize(CVmean = mean(cycleValue))
 
-CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, mean)
+CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, median) ###### !!!!! Aggregating function = median
 
 dfCVall$nameGen.OrderedSeedling <- as.factor(dfCVall$nameGen)
 
@@ -320,12 +321,20 @@ dfCVall$nameGen.OrderedL8_WW <- as.factor(dfCVall$nameGen)
 dfCVall$nameGen.OrderedL8_WW <- factor(dfCVall$nameGen.OrderedL8_WW,
                                           levels =levels(dfCVall$nameGen.OrderedL8_WW)[order(CV.mean.wide$Leaf_8_WW)])
 
+CV.mean.wide$clust <- as.factor(kmeans(CV.mean.wide[, "Seedling_Leaf5_WW"], centers=5)$cluster)
+dfCVall <- dfCVall %>%
+  left_join(CV.mean.wide)
+
+
 pdf("./figures/cycleValue_30_genotypes.pdf", 12, 8)
-ggplot(data=dfCVall[1:622,], aes(y=cycleValue, x=tissueType.ord, colour=watering)) + geom_boxplot() + 
-  facet_wrap(.~nameGen)
+ggplot(data=dfCVall[1:622,], aes(y=cycleValue, x=tissueType.ord, colour=watering)) + 
+  geom_boxplot() + 
+  ylab("Endoreduplication factor (EF)") + xlab("Leaf sample") +
+  facet_wrap(.~nameGen) +
+  theme(axis.text.x = element_text(angle=45, hjust = 1, vjust = 1))
 
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Seedling_Leaf5")), 
-       aes(y=cycleValue, x=nameGen.OrderedSeedling)) +
+       aes(y=cycleValue, x=nameGen.OrderedSeedling, fill = clust)) +
   geom_boxplot(outlier.alpha = 0) +
   geom_point(size = 1) +
   theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
@@ -333,7 +342,7 @@ ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Seedling_Leaf5")),
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_8")), 
        aes(y=cycleValue, x=nameGen.OrderedL8_WW, fill=watering)) +
   geom_boxplot(outlier.alpha = 0) +
-  xlab("Accessions (ordered by L8_WW CV") +
+  xlab("Accessions (ordered by L8_WW CV)") +
   ylab("Cycle value") +
   scale_fill_manual(values=c("#386FA4", "#84D2F6")) +
   theme_bw() +
@@ -346,7 +355,7 @@ ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_30")),
 dev.off()
 system("open ./figures/cycleValue_30_genotypes.pdf")
 
-subset(dfCVall[1:622,], x256C > 0 )
+subset(dfCVall[1:622,], x256C > 0)
 
 gp.corr <- ggplot(data=CV.mean.wide, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
   geom_point() + geom_smooth(method = lm, se=F) #+ geom_abline(slope = 1, intercept = 0)
@@ -360,7 +369,6 @@ gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WW)
 gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WD) 
 dev.off()
 system("open ./figures/cycleValue_30_genotypes_correlations.pdf")
-
 
 
 
