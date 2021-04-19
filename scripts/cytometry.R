@@ -310,7 +310,7 @@ CV.mean <- subset(dfCVall[1:622,]) %>%
   group_by(nameGen, tissueType.ord, watering) %>%
   summarize(CVmean = mean(cycleValue))
 
-CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, median) ###### !!!!! Aggregating function = median
+CV.mean.wide <- dcast(CV.mean, formula=nameGen~tissueType.ord + watering, mean) 
 
 dfCVall$nameGen.OrderedSeedling <- as.factor(dfCVall$nameGen)
 
@@ -349,8 +349,10 @@ ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_8")),
   theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
 
 ggplot(data=subset(dfCVall[1:622,], tissueType.ord%in%c("Leaf_30")), 
-       aes(y=cycleValue, x=nameGen, fill=watering)) +
-  geom_boxplot() + theme(axis.text.x = element_text(angle=90))
+       aes(y=cycleValue, x=nameGen.OrderedL8_WW, fill=watering)) +
+  geom_boxplot() + 
+  scale_fill_manual(values=c("#386FA4", "#84D2F6")) +theme_bw() +
+  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
 
 dev.off()
 system("open ./figures/cycleValue_30_genotypes.pdf")
@@ -358,10 +360,13 @@ system("open ./figures/cycleValue_30_genotypes.pdf")
 subset(dfCVall[1:622,], x256C > 0)
 
 gp.corr <- ggplot(data=CV.mean.wide, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
-  geom_point() + geom_smooth(method = lm, se=F) #+ geom_abline(slope = 1, intercept = 0)
+  geom_point() + geom_smooth(method = lm, se=F) + geom_text_repel(aes(label=nameGen)) +
+  theme_bw() #+ geom_abline(slope = 1, intercept = 0)
+
+library(ggrepel)
 
 pdf("./figures/cycleValue_30_genotypes_correlations.pdf", 8, 7)
-gp.corr + geom_abline(slope = 1, intercept = 0)
+gp.corr + geom_abline(slope = 1, intercept = 0) 
 gp.corr + aes(x = Seedling_Leaf5_WW, y = Leaf_8_WD)
 gp.corr + aes(x = Leaf_8_WW, y = Leaf_8_WD) + geom_abline(slope = 1, intercept = 0)
 gp.corr + aes(x = Leaf_30_WW, y = Leaf_30_WD) + geom_abline(slope = 1, intercept = 0)
@@ -371,4 +376,4 @@ dev.off()
 system("open ./figures/cycleValue_30_genotypes_correlations.pdf")
 
 
-
+mean(subset(dfCVall[1:622,], tissueType.ord%in%c("Seedling_Leaf5"))$cycleValue)

@@ -22,27 +22,27 @@ ids <- read.xls(xls = "/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-d <- read.flowSet(path=paste("/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/data.Endopolyploidy.Nom_fichier_corrige_Leaf8only"))
-d.flowset <- d
+d.L8 <- read.flowSet(path=paste("/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/data.Endopolyploidy.Nom_fichier_corrige_Leaf8only"))
+d.flowset.L8 <- d.L8
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data transformation ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-dat_L8 <- transform(d, "lgDAPI"=log10(`DAPI`))
+dat_L8 <- transform(d.L8, "lgDAPI"=log10(`DAPI`))
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-resL8 <- filter(dat_L8[,], curv1Filter("lgDAPI", bwFac=0.48)) 
+resL8 <- filter(dat_L8[,], curv1Filter("lgDAPI", bwFac=0.8)) 
 resSumL8 <- summary(resL8)
 
 dfResL8 <- toTable(resSumL8)
 names(dfResL8); head(dfResL8); str(dfResL8)
 dfResL8$population <- as.factor(dfResL8$population)
-dfResL8$population <- factor(dfResL8$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "peak8", "rest"))
+dfResL8$population <- factor(dfResL8$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "rest"))
 dfResL8.wide <- reshape(dfResL8[, c("p", "sample", "population")], v.names = "p",  idvar = "sample", timevar = "population", direction = "wide")
 names(dfResL8.wide)
 dfResL8.wide <- do.call(data.frame, lapply(dfResL8.wide, function(x) replace(x, is.na(x), 0)))
@@ -50,7 +50,7 @@ dfResL8.wide <- do.call(data.frame, lapply(dfResL8.wide, function(x) replace(x, 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate cycle value (endoreplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-dfCV_L8 <- within(data = dfResL8.wide, { cycleValue <- (0*p.peak1 + 1*p.peak2 + 2*p.peak3 + 3*p.peak4 + 4*p.peak5 + 5*p.peak6 + 6*p.peak6 + 7*p.peak8)/(p.peak1 + p.peak2 + p.peak3 + p.peak4 + p.peak5 + p.peak6 + p.peak7 + p.peak8) })
+dfCV_L8 <- within(data = dfResL8.wide, { cycleValue <- (0*p.peak2 + 1*p.peak3 + 2*p.peak4 + 3*p.peak5 + 4*p.peak6 + 5*p.peak7)/(p.peak2 + p.peak3 + p.peak4 + p.peak5 + p.peak6 + p.peak7) })
 
 ggplot(subset(dfResL8), aes(y=percent, x=population)) + geom_boxplot()
 
@@ -62,7 +62,7 @@ ggplot(subset(dfCV_L8), aes(x=cycleValue)) + geom_histogram()
 # split(dat, res)
 
 split.resL8 <- split(dat_L8, resL8, population=list(keep=c("peak 1")))
-Lth <- as.numeric(summary(split.resL8L8)[1])
+Lth <- as.numeric(summary(split.resL8)[1])
 
 df.resL8 <- data.frame(min1=rep(NA, Lth), max1=rep(NA, Lth), 
                      min2=rep(NA, Lth), max2=rep(NA, Lth),
@@ -100,22 +100,20 @@ split.resL8 <- split(dat_L8, resL8, population=list(keep=c("peak 7")))
 for(i in 1:Lth){
   df.resL8[i, c("min7", "max7")] <- 10^(range(exprs(split.resL8$keep[[i]]$"lgDAPI")))
 }
-split.resL8 <- split(dat_L8, resL8, population=list(keep=c("peak 8")))
-for(i in 1:Lth){
-  df.resL8[i, c("min8", "max8")] <- 10^(range(exprs(split.resL8$keep[[i]]$"lgDAPI")))
-}
+#split.resL8 <- split(dat_L8, resL8, population=list(keep=c("peak 8")))
+#for(i in 1:Lth){
+#  df.resL8[i, c("min8", "max8")] <- 10^(range(exprs(split.resL8$keep[[i]]$"lgDAPI")))
+#}
 
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 #  ave df.res into d1.L8 for safe handling ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-
 d1.L8 <- df.resL8
-
 d1.L8 <- do.call(data.frame,lapply(df.res, function(x) replace(x, is.infinite(x),NA)))
 d1.L8 <- do.call(data.frame,lapply(d1.L8, function(x) replace(x, x==0,NA)))
 
-d1.L8$names <- pData(d[1:622,])
+d1.L8$names <- pData(d.L8[,])
 d1.L8$num <- 1:Lth
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
@@ -139,9 +137,9 @@ system(paste("open", "./Figures/Fluorescence_peaks_L8.pdf"))
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 1/ calculate mean limits of each peak / day of measurement ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-df.m.L8 <- melt(d1.L8[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8")], 
-             measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8"))
-df.m.L8$mM <- factor(df.m.L8$variable, labels=rep(c("min","max"), 8))
+df.m.L8 <- melt(d1.L8[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7")], #, "min8", "max8")], 
+             measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7")) #, "min8", "max8"))
+df.m.L8$mM <- factor(df.m.L8$variable, labels=rep(c("min","max"), 7))
 
 gp2.L8 <- ggplot(df.m.L8, aes(y=value, x=variable, fill=mM)) + geom_boxplot() + scale_y_log10(limits=c(1, 1000)) + ylab("") + xlab("Peak limits") + coord_flip()
 
@@ -166,10 +164,12 @@ peak.lim.L8 <- list(
           mean(c(pl.L8[8, "3rd Qu."], pl.L8[9,"1st Qu."]))),
   peak5=c(mean(c(pl.L8[8, "3rd Qu."], pl.L8[9,"1st Qu."])),
           mean(c(pl.L8[10, "3rd Qu."], pl.L8[11,"1st Qu."]))),
-  peak6=c(mean(c(pl.L8[10, "3rd Qu."], pl.L8[11,"1st Qu."])),
+  #peak6=c(mean(c(pl.L8[10, "3rd Qu."], pl.L8[11,"1st Qu."])),
+  #        mean(c(pl.L8[12, "3rd Qu."], pl.L8[13,"1st Qu."]))),
+  peak6=c(mean(c(pl.L8[10, "3rd Qu."], pl.L8[11,"1st Qu."])), 
           mean(c(pl.L8[12, "3rd Qu."], pl.L8[13,"1st Qu."]))),
-  peak7=c(mean(c(pl.L8[12, "3rd Qu."], pl.L8[13,"1st Qu."])), pl.L8[15, "Max."]),
-  peak8=c(pl.L8[15, "Max."], pl.L8[16, "Max."])
+  peak7=c(mean(c(pl.L8[12, "3rd Qu."], pl.L8[13,"1st Qu."])),
+          pl.L8[14, "Max."])
 )
 pl1.L8 <- melt(as.data.frame(peak.lim.L8))
 gp2.L8 + geom_hline(data=pl1.L8, aes(yintercept=value), col="blue") + theme_bw()
@@ -196,26 +196,26 @@ rectGate1.L8 <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.L8$peak1)
 # 
 fres00.L8 <- filter(dat_L8, filter=rectGate1.L8)
 cycleProportion.L8 <- toTable(summary(fres00.L8))
-for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8")) {
+for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7")) {
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.L8[[i]])
   fres00.L8 <- filter(dat_L8, filter=rectGate.i)
   cycleProportion.L8 <- rbind(cycleProportion.L8, toTable(summary(fres00.L8)))
 }
 
-cycleProportion.L8$ploidy <- factor(cycleProportion.L8$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C"))
-cycleProportion.L8.wide <- dcast(cycleProportion.L8[, c("sample", "ploidy", "p")], formula=sample~ploidy)
-cycleProportion.L8.wide[is.na(cycleProportion.L8.wide$x128C), "x128C"] <- 0
+cycleProportion.L8$ploidy <- factor(cycleProportion.L8$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C"))
+cycleProportion.L8.wide <- dcast(cycleProportion.L8[, c("sample", "ploidy", "p")], formula=sample~ploidy, value.var="p")
+#cycleProportion.L8.wide[is.na(cycleProportion.L8.wide$x128C), "x128C"] <- 0
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate new cycle value (endoreduplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # The two periods of measurement treated conjointly ----
 dfCV.L8 <- within(data = cycleProportion.L8.wide, {
-  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C)
+  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C)/(x2C + x4C + x8C + x16C + x32C + x64C)
 })
 dfCV.L8$cycleValue
 dfCV.L8 <- dfCV.L8 %>%
   left_join(ids, by=c("sample"="fileName")) %>%
-  left_join(idPots)
+  left_join(idPots, by=c("idPot"))
 
 dfCV.L8$tissueType.ord <- factor(dfCV.L8$tissueType, 
                              levels = c("f6", "f8", "F8", "f30"), 
@@ -229,15 +229,13 @@ CV.mean.L8 <- subset(dfCV.L8) %>%
   group_by(nameGen, tissueType.ord, watering) %>%
   summarize(CVmean = mean(cycleValue))
 
-CV.mean.L8.wide <- dcast(CV.mean.L8, formula=nameGen~tissueType.ord + watering, mean)
+CV.mean.L8.wide <- dcast(CV.mean.L8, formula=nameGen~tissueType.ord + watering, mean, value.var = "CVmean")
 
 dfCV.L8$nameGen.OrderedL8_WW <- as.factor(dfCV.L8$nameGen)
 dfCV.L8$nameGen.OrderedL8_WW <- factor(dfCV.L8$nameGen.OrderedL8_WW,
                                           levels =levels(dfCV.L8$nameGen.OrderedL8_WW)[order(CV.mean.L8.wide$Leaf_8_WW)])
 
 pdf("./figures/cycleValue_30_genotypes.L8.pdf", 12, 8)
-ggplot(data=dfCV.L8[1:622,], aes(y=cycleValue, x=tissueType.ord, colour=watering)) + geom_boxplot() + 
-  facet_wrap(.~nameGen)
 
 ggplot(data=subset(dfCV.L8, tissueType.ord%in%c("Leaf_8")), 
        aes(y=cycleValue, x=nameGen.OrderedL8_WW, fill=watering)) +
@@ -262,5 +260,12 @@ system("open ./figures/cycleValue_30_genotypes_correlations.L8_vs_all.pdf")
 dfCV.L8_all <- dfCV.L8[, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")] %>%
   left_join(subset(dfCVall[, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")], tissueType.ord=="Leaf_8"), by="idPot")
 
-ggplot(dfCV.L8_all, aes(x=cycleValue.x, y=cycleValue.y)) + geom_point()
+pdf("./figures/cycleValue_correlations.L8_vs_all_bw_fac_0.8.pdf", 8, 7)
+ggplot(dfCV.L8_all, aes(x=cycleValue.x, y=cycleValue.y)) +
+  geom_point() + geom_abline(slope = 1, intercept = 0) +
+  xlab("Cycle value with gating on L8 samples") +
+  ylab("Cycle value with gating on all samples") +
+  theme(text = element_text(size=16))
+dev.off()
+system("open ./figures/cycleValue_correlations.L8_vs_all_bw_fac_0.8.pdf")
 
