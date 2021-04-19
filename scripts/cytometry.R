@@ -90,13 +90,13 @@ system(paste("open","./figures/Distribution_DAPI_filter.pdf"))
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.48)) # ID 623 excluded because not obtained with same scale (and it is a duplicate sample)
+res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.80)) # ID 623 excluded because not obtained with same scale (and it is a duplicate sample)
 resSum <- summary(res)
 
 dfRes <- toTable(resSum)
 names(dfRes); head(dfRes); str(dfRes)
 dfRes$population <- as.factor(dfRes$population)
-dfRes$population <- factor(dfRes$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "peak8", "peak9", "rest"))
+dfRes$population <- factor(dfRes$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "peak8", "rest"))
 dfRes.wide <- reshape(dfRes[, c("p", "sample", "population")], v.names = "p",  idvar = "sample", timevar = "population", direction = "wide")
 names(dfRes.wide)
 dfRes.wide <- do.call(data.frame, lapply(dfRes.wide, function(x) replace(x, is.na(x), 0)))
@@ -158,10 +158,10 @@ split.res <- split(dat[1:622,], res, population=list(keep=c("peak 8")))
 for(i in 1:Lth){
   df.res[i, c("min8", "max8")] <- 10^(range(exprs(split.res$keep[[i]]$"lgDAPI")))
 }
-split.res <- split(dat[1:622,], res, population=list(keep=c("peak 9")))
-for(i in 1:Lth){
-  df.res[i, c("min9", "max9")] <- 10^(range(exprs(split.res$keep[[i]]$"lgDAPI")))
-}
+#split.res <- split(dat[1:622,], res, population=list(keep=c("peak 9")))
+#for(i in 1:Lth){
+#  df.res[i, c("min9", "max9")] <- 10^(range(exprs(split.res$keep[[i]]$"lgDAPI")))
+#}
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 #  ave df.res into d1 for safe handling ----
@@ -175,9 +175,9 @@ d1 <- do.call(data.frame,lapply(d1, function(x) replace(x, x==0,NA)))
 d1$names <- pData(d[1:622,])
 d1$num <- 1:Lth
 ###### Les identifiants ne sont pas encore faits !!!!!!!!!!!!!! A FAIRE
-d1 <- cbind(d1[1:Lth, ], ids)
-d1$idAccession <- as.factor(d1$idAccession)
-d1 <- merge(d1, measureDate, by.x="num", by.y="id")
+#d1 <- cbind(d1[1:Lth, ], ids)
+#d1$idAccession <- as.factor(d1$idAccession)
+#d1 <- merge(d1, measureDate, by.x="num", by.y="id")
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Plot fluorescence peaks automatically detected by curve1filter() ----
@@ -192,7 +192,7 @@ gg1 <- ggplot(d1, aes(x=min1, y=num)) + scale_x_log10() +
   geom_segment(aes(x=min6, xend=max6, ystart=num, yend=num), col="grey") +
   geom_segment(aes(x=min7, xend=max7, ystart=num, yend=num), col="yellow") +
   geom_segment(aes(x=min8, xend=max8, ystart=num, yend=num), col="orange") +
-  geom_segment(aes(x=min9, xend=max9, ystart=num, yend=num), col="black") +
+ # geom_segment(aes(x=min9, xend=max9, ystart=num, yend=num), col="black") +
   xlab("Fluorescence") + ylab("Sample") + theme_bw()
 print(gg1)
 #print(gg1 + facet_wrap(~idAccession))
@@ -216,8 +216,10 @@ print(gg2)
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 1/ calculate mean limits of each peak / day of measurement ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-df.m <- melt(d1[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8", "min9", "max9")], measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8", "min9", "max9"))
-df.m$mM <- factor(df.m$variable, labels=rep(c("min","max"), 9))
+df.m <- melt(d1[, c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8")],#, "min9", "max9")], 
+             measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3", "min4", "max4", "min5", "max5", "min6", "max6", "min7", "max7", "min8", "max8"#, "min9", "max9"
+                              ))
+df.m$mM <- factor(df.m$variable, labels=rep(c("min","max"), 8))
 droplevels(df.m)
 
 gp2.all <- ggplot(df.m, aes(y=value, x=variable, fill=mM)) + geom_boxplot() + scale_y_log10(limits=c(1, 1000)) + ylab("") + xlab("Peak limits") + coord_flip()
@@ -245,10 +247,14 @@ peak.lim.all <- list(
           mean(c(pl.all[10, "3rd Qu."], pl.all[11,"1st Qu."]))),
   peak6=c(mean(c(pl.all[10, "3rd Qu."], pl.all[11,"1st Qu."])),
           mean(c(pl.all[12, "3rd Qu."], pl.all[13,"1st Qu."]))),
-  peak7=c(mean(c(pl.all[12, "3rd Qu."], pl.all[13,"1st Qu."])),
-          mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."]))),
-  peak8=c(mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."])), pl.all[17, "Max."]),
-  peak9=c(pl.all[17, "Max."], pl.all[18, "Max."])
+  peak7=c(mean(c(pl.L30[12, "3rd Qu."], pl.L30[13,"1st Qu."])), 
+          mean(c(pl.L30[14, "3rd Qu."], pl.L30[15,"1st Qu."]))),
+  peak8=c(mean(c(pl.L30[14, "3rd Qu."], pl.L30[15,"1st Qu."])),
+          pl.L30[16, "Max."])
+#  peak7=c(mean(c(pl.all[12, "3rd Qu."], pl.all[13,"1st Qu."])),
+#          mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."]))),
+#  peak8=c(mean(c(pl.all[14, "3rd Qu."], pl.all[15,"1st Qu."])), pl.all[17, "Max."]),
+#  peak9=c(pl.all[17, "Max."], pl.all[18, "Max."])
 )
 pl1.all <- melt(as.data.frame(peak.lim.all))
 gp2.all + geom_hline(data=pl1.all, aes(yintercept=value), col="blue") + theme_bw()
@@ -276,22 +282,22 @@ rectGate1.all <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.all$peak1)
 # 
 fres00 <- filter(dat[1:622, ], filter=rectGate1.all)
 cycleProportion.all <- toTable(summary(fres00))
-for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8", "peak9")) {
+for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8")) {
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.all[[i]])
   fres00 <- filter(dat[1:622, ], filter=rectGate.i)
   cycleProportion.all <- rbind(cycleProportion.all, toTable(summary(fres00)))
 }
 
-cycleProportion.all$ploidy <- factor(cycleProportion.all$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C", "x256C"))
+cycleProportion.all$ploidy <- factor(cycleProportion.all$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C"))
 cycleProportion.all.wide <- dcast(cycleProportion.all[, c("sample", "ploidy", "p")], formula=sample~ploidy)
 cycleProportion.all.wide[is.na(cycleProportion.all.wide$x128C), "x128C"] <- 0
-cycleProportion.all.wide[is.na(cycleProportion.all.wide$x128C), "x256C"] <- 0
+#cycleProportion.all.wide[is.na(cycleProportion.all.wide$x128C), "x256C"] <- 0
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate new cycle value (endoreduplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # The two periods of measurement treated conjointly ----
 dfCVall <- within(data = cycleProportion.all.wide, {
-  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C + 7*x256C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C + x256C)
+  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C)
 })
 dfCVall$cycleValue
 dfCVall <- dfCVall %>%
@@ -359,11 +365,10 @@ system("open ./figures/cycleValue_30_genotypes.pdf")
 
 subset(dfCVall[1:622,], x256C > 0)
 
+library(ggrepel)
 gp.corr <- ggplot(data=CV.mean.wide, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
   geom_point() + geom_smooth(method = lm, se=F) + geom_text_repel(aes(label=nameGen)) +
   theme_bw() #+ geom_abline(slope = 1, intercept = 0)
-
-library(ggrepel)
 
 pdf("./figures/cycleValue_30_genotypes_correlations.pdf", 8, 7)
 gp.corr + geom_abline(slope = 1, intercept = 0) 
