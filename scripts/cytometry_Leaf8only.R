@@ -12,12 +12,14 @@
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 idPots <- read.xls(xls = "./data/pot_C3M42.xlsx")
 
-
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Sample ids ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 ids <- read.xls(xls = "/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/cytometry_sample_IDs.xlsx")
 
+IDS <- ids %>%
+  select(fileName, idPot) %>%
+  left_join(idPots[, c("idPot", "nameGen", "watering")], by=c("idPot" = "idPot"))
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data ----
@@ -36,7 +38,7 @@ dat_L8 <- transform(d.L8, "lgDAPI"=log10(`DAPI`))
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-resL8 <- filter(dat_L8[,], curv1Filter("lgDAPI", bwFac=0.8)) 
+resL8 <- filter(dat_L8[,], curv1Filter("lgDAPI", bwFac=0.5))
 resSumL8 <- summary(resL8)
 
 dfResL8 <- toTable(resSumL8)
@@ -107,7 +109,7 @@ for(i in 1:Lth){
 
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-#  ave df.res into d1.L8 for safe handling ----
+#  Save df.res into d1.L8 for safe handling ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 d1.L8 <- df.resL8
 d1.L8 <- do.call(data.frame,lapply(df.resL8, function(x) replace(x, is.infinite(x),NA)))
@@ -115,6 +117,15 @@ d1.L8 <- do.call(data.frame,lapply(d1.L8, function(x) replace(x, x==0,NA)))
 
 d1.L8$names <- pData(d.L8[,])
 d1.L8$num <- 1:Lth
+
+#d1.L8 <- cbind(d1.L8[1:Lth, ], ids)
+#d1.L8$idAccession <- as.factor(d1.L8$idAccession)
+# d1.L8 <- merge(d1.L8, IDS, by.x="names", by.y="fileName")
+
+d1.L8 <- d1.L8 %>% 
+  mutate(name=as.character(names$name)) %>%
+  left_join(IDS, by=c("name"="fileName"))
+
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Plot fluorescence peaks automatically detected by curve1filter() ----
@@ -128,8 +139,9 @@ gg1 <- ggplot(d1.L8, aes(x=min1, y=num)) + scale_x_log10() +
   geom_segment(aes(x=min5, xend=max5, ystart=num, yend=num), col="violet") +
   geom_segment(aes(x=min6, xend=max6, ystart=num, yend=num), col="grey") +
   geom_segment(aes(x=min7, xend=max7, ystart=num, yend=num), col="yellow") +
-  geom_segment(aes(x=min8, xend=max8, ystart=num, yend=num), col="orange") +
-  xlab("Fluorescence") + ylab("Sample") + theme_bw()
+#  geom_segment(aes(x=min8, xend=max8, ystart=num, yend=num), col="orange") +
+  xlab("Fluorescence") + ylab("Sample") + theme_bw() +
+  facet_wrap(.~watering, ncol=1)
 gg1
 dev.off()
 system(paste("open", "./Figures/Fluorescence_peaks_L8.pdf"))

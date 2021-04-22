@@ -17,6 +17,10 @@ idPots <- read.xls(xls = "./data/pot_C3M42.xlsx")
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 ids <- read.xls(xls = "/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/cytometry_sample_IDs.xlsx")
 
+IDS <- ids %>%
+  select(fileName, idPot) %>%
+  left_join(idPots[, c("idPot", "nameGen", "watering")], by=c("idPot" = "idPot"))
+
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data ----
@@ -82,7 +86,7 @@ ggplot(df, aes(x=lgDAPI)) +
   stat_density(geom="line", color="red")
 
 pdf("./figures/Distribution_DAPI_filter.pdf")
-densityplot(~ `lgDAPI`, dat[4,][[1]], filter=curv1Filter("lgDAPI", bwFac=0.8, gridsize = rep(401,2)), xlim=c(0, 4))
+densityplot(~ `lgDAPI`, dat[4,][[1]], filter=curv1Filter("lgDAPI", bwFac=0.5, gridsize = rep(401,2)), xlim=c(0, 4))
 dev.off()
 system(paste("open","./figures/Distribution_DAPI_filter.pdf"))
 
@@ -90,7 +94,7 @@ system(paste("open","./figures/Distribution_DAPI_filter.pdf"))
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.80)) # ID 623 excluded because not obtained with same scale (and it is a duplicate sample)
+res <- filter(dat[1:622,], curv1Filter("lgDAPI", bwFac=0.5)) # ID 623 excluded because not obtained with same scale (and it is a duplicate sample)
 resSum <- summary(res)
 
 dfRes <- toTable(resSum)

@@ -36,13 +36,13 @@ dat_L30 <- transform(d.L30, "lgDAPI"=log10(`DAPI`))
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Global ----
-resL30 <- filter(dat_L30[,], curv1Filter("lgDAPI", bwFac=0.8)) 
+resL30 <- filter(dat_L30[,], curv1Filter("lgDAPI", bwFac=0.5)) 
 resSumL30 <- summary(resL30)
 
 dfResL30 <- toTable(resSumL30)
 names(dfResL30); head(dfResL30); str(dfResL30)
 dfResL30$population <- as.factor(dfResL30$population)
-dfResL30$population <- factor(dfResL30$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "peak8", "rest"))
+dfResL30$population <- factor(dfResL30$population, labels=c("peak1", "peak2", "peak3", "peak4", "peak5","peak6", "peak7", "peak8", "peak9", "rest"))
 dfResL30.wide <- reshape(dfResL30[, c("p", "sample", "population")], v.names = "p",  idvar = "sample", timevar = "population", direction = "wide")
 names(dfResL30.wide)
 dfResL30.wide <- do.call(data.frame, lapply(dfResL30.wide, function(x) replace(x, is.na(x), 0)))
@@ -50,11 +50,10 @@ dfResL30.wide <- do.call(data.frame, lapply(dfResL30.wide, function(x) replace(x
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate cycle value (endoreplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-dfCV_L30 <- within(data = dfResL30.wide, { cycleValue <- (0*p.peak2 + 1*p.peak3 + 2*p.peak4 + 3*p.peak5 + 4*p.peak6 + 5*p.peak7 + 6*p.peak8)/(p.peak2 + p.peak3 + p.peak4 + p.peak5 + p.peak6 + p.peak7 + p.peak8) })
+dfCV_L30 <- within(data = dfResL30.wide, { cycleValue <- (0*p.peak2 + 1*p.peak3 + 2*p.peak4 + 3*p.peak5 + 4*p.peak6 + 5*p.peak7 + 6*p.peak8 + 7*p.peak9)/(p.peak2 + p.peak3 + p.peak4 + p.peak5 + p.peak6 + p.peak7 + p.peak8 + p.peak9) })
 
-ggplot(subset(dfResL30), aes(y=percent, x=population)) + geom_boxplot()
-
-ggplot(subset(dfCV_L30), aes(x=cycleValue)) + geom_histogram()
+#ggplot(subset(dfResL30), aes(y=percent, x=population)) + geom_boxplot()
+#ggplot(subset(dfCV_L30), aes(x=cycleValue)) + geom_histogram()
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Split frames per filtering ----
@@ -105,6 +104,10 @@ split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 8")))
 for(i in 1:Lth){
   df.resL30[i, c("min8", "max8")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
 }
+split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 9")))
+for(i in 1:Lth){
+  df.resL30[i, c("min9", "max9")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
+}
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 #  ave df.res into d1.L30 for safe handling ----
@@ -115,6 +118,10 @@ d1.L30 <- do.call(data.frame,lapply(d1.L30, function(x) replace(x, x==0,NA)))
 
 d1.L30$names <- pData(d.L30[,])
 d1.L30$num <- 1:Lth
+
+d1.L30 <- d1.L30 %>% 
+  mutate(name=as.character(names$name)) %>%
+  left_join(IDS, by=c("name"="fileName"))
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Plot fluorescence peaks automatically detected by curve1filter() ----
@@ -129,7 +136,9 @@ gg1 <- ggplot(d1.L30, aes(x=min1, y=num)) + scale_x_log10() +
   geom_segment(aes(x=min6, xend=max6, ystart=num, yend=num), col="grey") +
   geom_segment(aes(x=min7, xend=max7, ystart=num, yend=num), col="yellow") +
   geom_segment(aes(x=min8, xend=max8, ystart=num, yend=num), col="orange") +
-  xlab("Fluorescence") + ylab("Sample") + theme_bw()
+  geom_segment(aes(x=min9, xend=max9, ystart=num, yend=num), col="black") +
+  xlab("Fluorescence") + ylab("Sample") + theme_bw() +
+  facet_wrap(.~watering, ncol=1)
 gg1
 dev.off()
 system(paste("open", "./Figures/Fluorescence_peaks_L30.pdf"))
@@ -139,11 +148,11 @@ system(paste("open", "./Figures/Fluorescence_peaks_L30.pdf"))
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 df.m.L30 <- melt(d1.L30[, c("min1", "max1", "min2", "max2", "min3", "max3",
                             "min4", "max4", "min5", "max5", "min6", "max6", 
-                            "min7", "max7", "min8", "max8")], 
+                            "min7", "max7", "min8", "max8", "min9", "max9")], 
              measure.vars = c("min1", "max1", "min2", "max2", "min3", "max3",
                               "min4", "max4", "min5", "max5", "min6", "max6",
-                              "min7", "max7", "min8", "max8"))
-df.m.L30$mM <- factor(df.m.L30$variable, labels=rep(c("min","max"), 8))
+                              "min7", "max7", "min8", "max8", "min9", "max9"))
+df.m.L30$mM <- factor(df.m.L30$variable, labels=rep(c("min","max"), 9))
 
 gp2.L30 <- ggplot(df.m.L30, aes(y=value, x=variable, fill=mM)) + geom_boxplot() + scale_y_log10(limits=c(1, 1000)) + ylab("") + xlab("Peak limits") + coord_flip()
 
@@ -172,9 +181,11 @@ peak.lim.L30 <- list(
           mean(c(pl.L30[12, "3rd Qu."], pl.L30[13,"1st Qu."]))),
   peak7=c(mean(c(pl.L30[12, "3rd Qu."], pl.L30[13,"1st Qu."])), 
           mean(c(pl.L30[14, "3rd Qu."], pl.L30[15,"1st Qu."]))),
-  peak8=c(mean(c(pl.L30[14, "3rd Qu."], pl.L30[15,"1st Qu."])),
-          pl.L30[16, "Max."])
-)
+  peak8=c(mean(c(pl.L30[14, "3rd Qu."], pl.L30[15,"1st Qu."])), 
+          mean(c(pl.L30[16, "3rd Qu."], pl.L30[17,"1st Qu."]))),
+  peak9=c(mean(c(pl.L30[16, "3rd Qu."], pl.L30[17,"1st Qu."])),
+          pl.L30[18, "Max."])
+  )
 pl1.L30 <- melt(as.data.frame(peak.lim.L30))
 gp2.L30 + geom_hline(data=pl1.L30, aes(yintercept=value), col="blue") + theme_bw()
 
@@ -200,21 +211,21 @@ rectGate1.L30 <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.L30$peak1)
 # 
 fres00.L30 <- filter(dat_L30, filter=rectGate1.L30)
 cycleProportion.L30 <- toTable(summary(fres00.L30))
-for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8")) {
+for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8", "peak9")) {
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.L30[[i]])
   fres00.L30 <- filter(dat_L30, filter=rectGate.i)
   cycleProportion.L30 <- rbind(cycleProportion.L30, toTable(summary(fres00.L30)))
 }
 
-cycleProportion.L30$ploidy <- factor(cycleProportion.L30$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C"))
+cycleProportion.L30$ploidy <- factor(cycleProportion.L30$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C", "x256C"))
 cycleProportion.L30.wide <- dcast(cycleProportion.L30[, c("sample", "ploidy", "p")], formula=sample~ploidy, value.var="p")
 cycleProportion.L30.wide[is.na(cycleProportion.L30.wide$x128C), "x128C"] <- 0
+cycleProportion.L30.wide[is.na(cycleProportion.L30.wide$x128C), "x256C"] <- 0
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Calculate new cycle value (endoreduplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-# The two periods of measurement treated conjointly ----
 dfCV.L30 <- within(data = cycleProportion.L30.wide, {
-  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C)
+  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C + 7*x256C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C + x256C)
 })
 dfCV.L30$cycleValue
 dfCV.L30 <- dfCV.L30 %>%
@@ -225,7 +236,7 @@ dfCV.L30$tissueType.ord <- factor(dfCV.L30$tissueType,
                              levels = c("f6", "f8", "F8", "f30"), 
                              labels = c("Seedling_Leaf5","Leaf_8", "Leaf_8", "Leaf_30"))
 
-dfCV.L30[dfCV.L30$tissueType.ord=="Seedling@Leaf5", "watering"] <- "WW"
+dfCV.L30[dfCV.L30$tissueType.ord=="Seedling_Leaf5", "watering"] <- "WW"
 dfCV.L30$watering <- factor(dfCV.L30$watering, levels = c("WW", "WD"))
 
 CV.mean.L30 <- subset(dfCV.L30) %>%
