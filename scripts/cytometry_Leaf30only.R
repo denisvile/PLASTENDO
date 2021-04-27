@@ -7,17 +7,7 @@
 
 # source("cytometry.libraries.r")
 
-# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-# Pots ids ----
-# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-idPots <- read.xls(xls = "./data/pot_C3M42.xlsx")
-
-
-# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-# Sample ids ----
-# €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-ids <- read.xls(xls = "/Users/denis/Documents/Encadrements/Stages/2021\ -\ M2\ -\ Benoit\ Berthet\ -\ Endopolyploidy/Experiment/endopolyploidy/cytometry_sample_IDs.xlsx")
-
+source("./scripts/cytometry_IDsamples.r")
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data ----
@@ -35,7 +25,6 @@ dat_L30 <- transform(d.L30, "lgDAPI"=log10(`DAPI`))
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Automated filtering of flow cytometry data by curve1Filter ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-# Global ----
 resL30 <- filter(dat_L30[,], curv1Filter("lgDAPI", bwFac=0.5)) 
 resSumL30 <- summary(resL30)
 
@@ -52,14 +41,9 @@ dfResL30.wide <- do.call(data.frame, lapply(dfResL30.wide, function(x) replace(x
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 dfCV_L30 <- within(data = dfResL30.wide, { cycleValue <- (0*p.peak2 + 1*p.peak3 + 2*p.peak4 + 3*p.peak5 + 4*p.peak6 + 5*p.peak7 + 6*p.peak8 + 7*p.peak9)/(p.peak2 + p.peak3 + p.peak4 + p.peak5 + p.peak6 + p.peak7 + p.peak8 + p.peak9) })
 
-#ggplot(subset(dfResL30), aes(y=percent, x=population)) + geom_boxplot()
-#ggplot(subset(dfCV_L30), aes(x=cycleValue)) + geom_histogram()
-
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Split frames per filtering ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-# split(dat, res)
-
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 1")))
 Lth <- as.numeric(summary(split.resL30)[1])
 
@@ -72,45 +56,36 @@ df.resL30 <- data.frame(min1=rep(NA, Lth), max1=rep(NA, Lth),
                      min7=rep(NA, Lth), max7=rep(NA, Lth),
                      min8=rep(NA, Lth), max8=rep(NA, Lth)
                      )
-
 for(i in 1:Lth){
   df.resL30[i, c("min1", "max1")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  }
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 2")))
 for(i in 1:Lth){
-  df.resL30[i, c("min2", "max2")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min2", "max2")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 3")))
 for(i in 1:Lth){
-  df.resL30[i, c("min3", "max3")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min3", "max3")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 4")))
 for(i in 1:Lth){
-  df.resL30[i, c("min4", "max4")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min4", "max4")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 5")))
 for(i in 1:Lth){
-  df.resL30[i, c("min5", "max5")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min5", "max5")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 6")))
 for(i in 1:Lth){
-  df.resL30[i, c("min6", "max6")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min6", "max6")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 7")))
 for(i in 1:Lth){
-  df.resL30[i, c("min7", "max7")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min7", "max7")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 8")))
 for(i in 1:Lth){
-  df.resL30[i, c("min8", "max8")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min8", "max8")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 split.resL30 <- split(dat_L30, resL30, population=list(keep=c("peak 9")))
 for(i in 1:Lth){
-  df.resL30[i, c("min9", "max9")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))
-}
+  df.resL30[i, c("min9", "max9")] <- 10^(range(exprs(split.resL30$keep[[i]]$"lgDAPI")))}
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-#  ave df.res into d1.L30 for safe handling ----
+#  Save df.res into d1.L30 for safe handling ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 d1.L30 <- df.resL30
 d1.L30 <- do.call(data.frame,lapply(df.resL30, function(x) replace(x, is.infinite(x),NA)))
@@ -126,7 +101,7 @@ d1.L30 <- d1.L30 %>%
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Plot fluorescence peaks automatically detected by curve1filter() ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-pdf("./Figures/Fluorescence_peaks_L30.pdf", 7, 7)
+
 gg1 <- ggplot(d1.L30, aes(x=min1, y=num)) + scale_x_log10() + 
   geom_segment(aes(xend=max1, ystart=num, yend=num)) + 
   geom_segment(aes(x=min2, xend=max2, ystart=num, yend=num), col="red") +
@@ -139,6 +114,8 @@ gg1 <- ggplot(d1.L30, aes(x=min1, y=num)) + scale_x_log10() +
   geom_segment(aes(x=min9, xend=max9, ystart=num, yend=num), col="black") +
   xlab("Fluorescence") + ylab("Sample") + theme_bw() +
   facet_wrap(.~watering, ncol=1)
+
+pdf("./Figures/Fluorescence_peaks_L30.pdf", 7, 7)
 gg1
 dev.off()
 system(paste("open", "./Figures/Fluorescence_peaks_L30.pdf"))
@@ -202,8 +179,6 @@ system("open ../figures/detected_and_estimatedPeakLimits.pdf")
 # 2/ use these limits as filters in filter() ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 rectGate1.L30 <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.L30$peak1)
-#rectGate1.1 <- rectangleGate(filterId = "peak1", "FL1-A"=peak.lim1.manual$peak1)
-#rectGate1.2 <- rectangleGate(filterId = "peak1", "FL1-A"=peak.lim2$peak1)
 
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # 3/ use these limits to extract peak % ----
@@ -215,7 +190,7 @@ for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8", "peak9
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.L30[[i]])
   fres00.L30 <- filter(dat_L30, filter=rectGate.i)
   cycleProportion.L30 <- rbind(cycleProportion.L30, toTable(summary(fres00.L30)))
-}
+  }
 
 cycleProportion.L30$ploidy <- factor(cycleProportion.L30$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C", "x256C"))
 cycleProportion.L30.wide <- dcast(cycleProportion.L30[, c("sample", "ploidy", "p")], formula=sample~ploidy, value.var="p")
