@@ -169,13 +169,13 @@ rectGate1.Lsdlg <- rectangleGate(filterId = "peak1", "DAPI"=peak.lim.Lsdlg$peak1
 # 
 fres00.Lsdlg <- filter(dat_Lsdlg, filter=rectGate1.Lsdlg)
 cycleProportion.Lsdlg <- toTable(summary(fres00.Lsdlg))
-for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7", "peak8", "peak9")) {
+for(i in c("peak2", "peak3", "peak4", "peak5", "peak6", "peak7")) {
   rectGate.i <- rectangleGate(filterId = i, "DAPI"=peak.lim.Lsdlg[[i]])
   fres00.Lsdlg <- filter(dat_Lsdlg, filter=rectGate.i)
   cycleProportion.Lsdlg <- rbind(cycleProportion.Lsdlg, toTable(summary(fres00.Lsdlg)))
   }
 
-cycleProportion.Lsdlg$ploidy <- factor(cycleProportion.Lsdlg$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C", "x128C", "x256C"))
+cycleProportion.Lsdlg$ploidy <- factor(cycleProportion.Lsdlg$population, labels=c("debris", "x2C", "x4C", "x8C", "x16C", "x32C", "x64C"))
 cycleProportion.Lsdlg.wide <- dcast(cycleProportion.Lsdlg[, c("sample", "ploidy", "p")], formula=sample~ploidy, value.var="p")
 cycleProportion.Lsdlg.wide[is.na(cycleProportion.Lsdlg.wide$x128C), "x128C"] <- 0
 cycleProportion.Lsdlg.wide[is.na(cycleProportion.Lsdlg.wide$x128C), "x256C"] <- 0
@@ -183,7 +183,7 @@ cycleProportion.Lsdlg.wide[is.na(cycleProportion.Lsdlg.wide$x128C), "x256C"] <- 
 # Calculate new cycle value (endoreduplication factor) ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 dfCV.Lsdlg <- within(data = cycleProportion.Lsdlg.wide, {
-  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C + 6*x128C + 7*x256C)/(x2C + x4C + x8C + x16C + x32C + x64C + x128C + x256C)
+  cycleValue <- (0*x2C + 1*x4C + 2*x8C + 3*x16C + 4*x32C + 5*x64C)/(x2C + x4C + x8C + x16C + x32C + x64C)
 })
 dfCV.Lsdlg$cycleValue
 dfCV.Lsdlg <- dfCV.Lsdlg %>%
@@ -197,7 +197,7 @@ dfCV.Lsdlg$tissueType.ord <- factor(dfCV.Lsdlg$tissueType,
 dfCV.Lsdlg[dfCV.Lsdlg$tissueType.ord=="Seedling_Leaf5", "watering"] <- "WW"
 dfCV.Lsdlg$watering <- factor(dfCV.Lsdlg$watering, levels = c("WW", "WD"))
 
-CV.mean.Lsdlg <- subset(dfCV.Lsdlg) %>%
+CV.mean.Lsdlg <- dfCV.Lsdlg %>%
   select(nameGen, tissueType.ord, watering, cycleValue) %>%
   group_by(nameGen, tissueType.ord, watering) %>%
   summarize(CVmean = mean(cycleValue))
@@ -206,24 +206,29 @@ CV.mean.Lsdlg.wide <- dcast(CV.mean.Lsdlg, formula=nameGen~tissueType.ord + wate
 
 dfCV.Lsdlg$nameGen.OrderedLsdlg_WW <- as.factor(dfCV.Lsdlg$nameGen)
 dfCV.Lsdlg$nameGen.OrderedLsdlg_WW <- factor(dfCV.Lsdlg$nameGen.OrderedLsdlg_WW,
-                                          levels =levels(dfCV.Lsdlg$nameGen.OrderedLsdlg_WW)[order(CV.mean.Lsdlg.wide$Leaf_30_WW)])
+                                          levels =levels(dfCV.Lsdlg$nameGen.OrderedLsdlg_WW)[order(CV.mean.Lsdlg.wide$Seedling_Leaf5_WW)])
+
+
+CV.mean.Lsdlg.wide$clust <- as.factor(kmeans(CV.mean.Lsdlg.wide[, "Seedling_Leaf5_WW"], centers=5)$cluster)
+dfCV.Lsdlg <- dfCV.Lsdlg %>%
+  left_join(CV.mean.Lsdlg.wide)
+
+CV.mean.all.3datasets <- CV.mean.L30.wide %>%
+  left_join(CV.mean.L8.wide) %>%
+  left_join(CV.mean.Lsdlg.wide)
+
 
 pdf("./figures/cycleValue_30_genotypes.Lsdlg.pdf", 12, 8)
-
-ggplot(data=subset(dfCV.Lsdlg, tissueType.ord%in%c("Leaf_30")), 
-       aes(y=cycleValue, x=nameGen.OrderedLsdlg_WW, fill=watering)) +
+ggplot(data=subset(dfCV.Lsdlg, tissueType.ord%in%c("Seedling_Leaf5")), 
+       aes(y=cycleValue, x=nameGen.OrderedLsdlg_WW, fill=clust)) +
   geom_boxplot(outlier.alpha = 0) +
   xlab("Accessions (ordered by Lsdlg_WW CV)") +
   ylab("Cycle value") +
-  scale_fill_manual(values=c("#386FA4", "#84D2F6")) +
   theme_bw() +
   theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
-
 dev.off()
 system("open ./figures/cycleValue_30_genotypes.Lsdlg.pdf")
 
-gp.corr <- ggplot(data=CV.mean.wide, aes(x = Leaf_30_WW, y = Leaf_30_WD)) +
-  geom_point() + geom_smooth(method = lm, se=F)
 
 pdf("./figures/cycleValue_30_genotypes_correlations.Lsdlg_vs_all.pdf", 8, 7)
 gp.corr + geom_abline(slope = 1, intercept = 0)
@@ -233,12 +238,25 @@ system("open ./figures/cycleValue_30_genotypes_correlations.Lsdlg_vs_all.pdf")
 dfCV.Lsdlg_all <- dfCV.Lsdlg[, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")] %>%
   left_join(subset(dfCVall[1:622, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")], tissueType.ord=="Leaf_30"), by="idPot")
 
-pdf("./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.8.pdf", 8, 7)
+pdf("./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.5.pdf", 8, 7)
 ggplot(dfCV.Lsdlg_all, aes(x=cycleValue.x, y=cycleValue.y)) +
   geom_point() + geom_abline(slope = 1, intercept = 0) +
   xlab("Cycle value with gating on Lsdlg samples") +
   ylab("Cycle value with gating on all samples") +
   theme(text = element_text(size=16))
 dev.off()
-system("open ./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.8.pdf")
+system("open ./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.5.pdf")
+
+gp.corr.3datasets <- ggplot(data=CV.mean.all.3datasets, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
+  geom_point() + geom_smooth(method = lm, se=F)
+
+pdf("./figures/cycleValue_30_genotypes_correlations.3datasets.pdf", 8, 7)
+gp.corr.3datasets + geom_abline(slope = 1, intercept = 0) 
+gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_8_WD)
+gp.corr.3datasets + aes(x = Leaf_8_WW, y = Leaf_8_WD) + geom_abline(slope = 1, intercept = 0)
+gp.corr.3datasets + aes(x = Leaf_30_WW, y = Leaf_30_WD) + geom_abline(slope = 1, intercept = 0)
+gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WW) 
+gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WD) 
+dev.off()
+system("open ./figures/cycleValue_30_genotypes_correlations.3datasets.pdf")
 
