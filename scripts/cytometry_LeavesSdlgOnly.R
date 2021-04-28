@@ -213,50 +213,7 @@ CV.mean.Lsdlg.wide$clust <- as.factor(kmeans(CV.mean.Lsdlg.wide[, "Seedling_Leaf
 dfCV.Lsdlg <- dfCV.Lsdlg %>%
   left_join(CV.mean.Lsdlg.wide)
 
-CV.mean.all.3datasets <- CV.mean.L30.wide %>%
-  left_join(CV.mean.L8.wide) %>%
-  left_join(CV.mean.Lsdlg.wide)
 
 
-pdf("./figures/cycleValue_30_genotypes.Lsdlg.pdf", 12, 8)
-ggplot(data=subset(dfCV.Lsdlg, tissueType.ord%in%c("Seedling_Leaf5")), 
-       aes(y=cycleValue, x=nameGen.OrderedLsdlg_WW, fill=clust)) +
-  geom_boxplot(outlier.alpha = 0) +
-  xlab("Accessions (ordered by Lsdlg_WW CV)") +
-  ylab("Cycle value") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
-dev.off()
-system("open ./figures/cycleValue_30_genotypes.Lsdlg.pdf")
 
-
-pdf("./figures/cycleValue_30_genotypes_correlations.Lsdlg_vs_all.pdf", 8, 7)
-gp.corr + geom_abline(slope = 1, intercept = 0)
-dev.off()
-system("open ./figures/cycleValue_30_genotypes_correlations.Lsdlg_vs_all.pdf")
-
-dfCV.Lsdlg_all <- dfCV.Lsdlg[, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")] %>%
-  left_join(subset(dfCVall[1:622, c("nameGen", "watering", "tissueType.ord", "idPot", "cycleValue")], tissueType.ord=="Leaf_30"), by="idPot")
-
-pdf("./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.5.pdf", 8, 7)
-ggplot(dfCV.Lsdlg_all, aes(x=cycleValue.x, y=cycleValue.y)) +
-  geom_point() + geom_abline(slope = 1, intercept = 0) +
-  xlab("Cycle value with gating on Lsdlg samples") +
-  ylab("Cycle value with gating on all samples") +
-  theme(text = element_text(size=16))
-dev.off()
-system("open ./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.5.pdf")
-
-gp.corr.3datasets <- ggplot(data=CV.mean.all.3datasets, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
-  geom_point() + geom_smooth(method = lm, se=F)
-
-pdf("./figures/cycleValue_30_genotypes_correlations.3datasets.pdf", 8, 7)
-gp.corr.3datasets + geom_abline(slope = 1, intercept = 0) 
-gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_8_WD)
-gp.corr.3datasets + aes(x = Leaf_8_WW, y = Leaf_8_WD) + geom_abline(slope = 1, intercept = 0)
-gp.corr.3datasets + aes(x = Leaf_30_WW, y = Leaf_30_WD) + geom_abline(slope = 1, intercept = 0)
-gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WW) 
-gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WD) 
-dev.off()
-system("open ./figures/cycleValue_30_genotypes_correlations.3datasets.pdf")
 
