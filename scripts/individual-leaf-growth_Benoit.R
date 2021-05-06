@@ -133,6 +133,12 @@ fitResults.pots.m <- fitResults.pots %>%
   group_by(nameGen, watering, leafType) %>%
   summarise(ER = mean(ER, na.rm=T))
 
+fitResults.pots.m.wide <- dcast(fitResults.pots.m, formula=nameGen + leafType ~ watering, mean, value.var="ER")
+
+fitResults.pots.m.wide <- fitResults.pots.m.wide %>%
+  mutate(ERrr = WD/WW) %>%
+  left_join(CV.mean.all.3datasets)
+  
 fitResults.pots.m <- fitResults.pots.m %>%
   left_join(CV.mean.all.3datasets)
 
@@ -146,7 +152,13 @@ ggplot(data=subset(fitResults.pots.m, leafType=="F-5" & !(nameGen %in% "Rennes-1
   facet_wrap(.~leafType) +
   theme_bw()
 
-fitResults.pots.m$nameGen
+ggplot(fitResults.pots.m.wide, aes(x=Seedling_Leaf5_WW, y=ERrr, colour=leafType)) +
+  geom_point() + facet_wrap(.~leafType)
 
+ggplot(subset(fitResults.pots.m.wide, leafType=="F8"), aes(x=Leaf_8_WW, y=WD/WW)) +
+  geom_text_repel(aes(label=nameGen)) +
+  geom_point() + facet_wrap(.~leafType)
 
+ggplot(subset(fitResults.pots.m.wide, leafType=="F+2"), aes(x=Leaf_8_WD/Leaf_8_WW, y=WD/WW, colour=clust)) + geom_text_repel(aes(label=nameGen)) +
+  geom_point() + facet_wrap(.~leafType)
 
