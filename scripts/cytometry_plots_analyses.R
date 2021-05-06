@@ -137,7 +137,7 @@ ddf_genoSelect <- rbind(ddf_An1_f6,
 pdf("./figures/Distribution_lgDAPI_selected_geno.pdf", 10, 8)
 ggplot(subset(ddf_genoSelect), 
        aes(x=lgDAPI, color=as.factor(idPot))) + 
-  geom_histogram(aes(y=..density..), bins = 150) + 
+#  geom_histogram(aes(y=..density..), bins = 150) + 
   geom_density(aes(color=as.factor(idPot))) +
   facet_wrap(.~idGen, nrow=2, ncol=2) +
   theme(legend.position = "none")
@@ -150,3 +150,30 @@ gp.CV.sdlg %+% subset(dfCV.Lsdlg, tissueType.ord%in%c("Seedling_Leaf5") &
 dev.off()
 system(paste("open","./figures/CV_selected_geno.pdf"))
 
+# Dendrogram (hclust) ----
+dists <- dist(CV.mean.Lsdlg.wide[, "Seedling_Leaf5_WW"])
+hc <- hclust(dists)
+dend <- as.dendrogram(hc)
+
+o.dend <- order.dendrogram(dend)
+library(dendextend)
+labels(dend) <- CV.mean.Lsdlg.wide$nameGen[o.dend]
+labels_colors(dend) <- as.integer(CV.mean.Lsdlg.wide$clust[o.dend])
+
+pdf("./figures/CV_Seedlings_dendrogram.pdf", 6, 7)
+plot(dend)
+dev.off()
+system(paste("open","./figures/CV_Seedlings_dendrogram.pdf"))
+plot_horiz.dendrogram(dend)
+
+
+# Relationships with traits ----
+names(d.plastedges)
+d.traits <- d.plastedges %>%
+  select(Genotype, idGen, latitude, ER, BTDAY, Growthrate, RGR) %>%
+  unique() %>%
+  left_join(CV.mean.all.3datasets, by=c("idGen" = "nameGen"))
+
+ggplot(d.traits, aes(x=latitude, y=Leaf_8_WW)) + geom_point() + geom_smooth(method=lm, formula='y ~ x')
+
+ggpairs(d.traits[,6:11])

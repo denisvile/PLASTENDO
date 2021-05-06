@@ -369,7 +369,6 @@ system("open ./figures/cycleValue_30_genotypes.pdf")
 
 subset(dfCVall[1:622,], x256C > 0)
 
-library(ggrepel)
 gp.corr <- ggplot(data=CV.mean.wide, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
   geom_point() + geom_smooth(method = lm, se=F) + geom_text_repel(aes(label=nameGen)) +
   theme_bw() #+ geom_abline(slope = 1, intercept = 0)
