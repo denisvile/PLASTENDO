@@ -55,6 +55,29 @@ gp.corr.3datasets + aes(x = Seedling_Leaf5_WW, y = Leaf_30_WD)
 dev.off()
 system("open ./figures/cycleValue_30_genotypes_correlations.3datasets.pdf")
 
+gp.corrmatrix.3datasets <- ggpairs(CV.mean.all.3datasets, columns = c(6,4,5,2,3),
+                                   upper = list(continuous = wrap(ggally_cor, size = 6, title="Corr.", method="spearman")),
+                                   lower=list(continuous=wrap("smooth", method = "lm", se=F)),
+                                   diag = list(continuous=wrap("blankDiag")),
+                                   axisLabels = "internal",
+                                   columnLabels = c("Seedlings","Leaf 8 WW","Leaf 8 WD","Leaf 30 WW","Leaf 30 WD")
+                                  )
+pdf("./figures/endo_correlation.pdf", 8, 7)
+gp.corrmatrix.3datasets + theme(panel.grid=element_blank(), panel.grid.major = element_blank()) 
+dev.off()
+system("open ./figures/endo_correlation.pdf")
+
+pdf("./figures/endo_WD.pdf", 4, 6)
+ggpaired(CV.mean.all.3datasets, cond1 = "Leaf_8_WW", cond2 = "Leaf_8_WD",
+         fill = "condition", palette = "jco", line.color = "gray", line.size = 0.4) +
+  ylab("Endoreplication factor") + theme(legend.position = "none")
+ggpaired(CV.mean.all.3datasets, cond1 = "Leaf_30_WW", cond2 = "Leaf_30_WD",
+         fill = "condition", palette = "jco", line.color = "gray", line.size = 0.4) +
+  ylab("Endoreplication factor") + theme(legend.position = "none")
+dev.off()
+system("open ./figures/endo_WD.pdf")
+
+
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Flow cytometry data for contrasted accessions ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
