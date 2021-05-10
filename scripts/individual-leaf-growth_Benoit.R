@@ -5,16 +5,14 @@
 
 # Data import ----
 
-ilg1 <- read.xls("./data/Croissance_feuille_C3M42.xlsx")
+ilg1 <- read.xls("./data/Croissance_feuille_v4.xlsx")
 str(ilg1)
 
 # day = number of days from Feb 1st 2021
 unique(ilg1$idGenotype) %in% unique(idPots$nameGen) 
-ilg1[ilg1$idGenotype == "kulturen-1", ]$idGenotype <- "Kulturen-1"
+# ilg1[ilg1$idGenotype == "kulturen-1", ]$idGenotype <- "Kulturen-1"
 ilg1$watering <- factor(ilg1$watering, levels = c("WW", "WD"))
 ilg1$leafType <- factor(ilg1$leafType, levels = c("F8", "F-5", "F+2"))
-
-
 
 # Arrêt de l'irrigation lorsque F6 était visible
 # F8 = une feuille qui a subit le dessèchement du sol (qui a poussé pendant le dessèchement) ou qui n'a pas subit le stress en condition bien irriguée (WW)
@@ -22,7 +20,6 @@ ilg1$leafType <- factor(ilg1$leafType, levels = c("F8", "F-5", "F+2"))
 # F-5 en condition WW, c'est une feuille visible au même moment (en moyenne) que la feuille F-5 de la condition WD
 # F+2 = la feuilles de rang -5 après la réirrigation (qui a eu lieu 13 jours après l'atteinte de la teneur en eau du sol cible (70% RWCsoil))
 # F+2 en condition WW, c'est une feuille visible au même moment (en moyenne) que la feuille F+2 de la condition WD
-
 
 ilg1 %>%
   group_by(idGenotype, idPot, leafType, watering) %>%
@@ -110,7 +107,6 @@ fitResults_F_2$leafType <- "F+2"
 fitResults.pots <- rbind(fitResults_F8, fitResults_F_5, fitResults_F_2)
 
 
-
 # Plot ERmax ----
 
 fitResults.pots <- fitResults.pots %>%
@@ -129,9 +125,16 @@ ggplot(subset(fitResults.pots, leafType=="F8" & !(idPot %in% c(110))), aes(y=ER,
 dev.off()
 system("open ./figures/ER_F8_genotypes.pdf")
 
+d.SLA.m.0$leafType <- factor(d.SLA.m.0$stage, labels = c("F+2", "F8"))
+
 fitResults.pots.m <- fitResults.pots %>%
   group_by(nameGen, watering, leafType) %>%
-  summarise(ER = mean(ER, na.rm=T))
+  summarise(ER = mean(ER, na.rm=T),
+            LAmax = mean(A, na.rm=T), 
+            Duration = mean(Duration, na.rm=T)) %>%
+  left_join(d.SLA.m.0) %>%
+  left_join(CV.mean.all.3datasets)
+
 
 fitResults.pots.m.wide <- dcast(fitResults.pots.m, formula=nameGen + leafType ~ watering, mean, value.var="ER")
 
@@ -139,8 +142,22 @@ fitResults.pots.m.wide <- fitResults.pots.m.wide %>%
   mutate(ERrr = WD/WW) %>%
   left_join(CV.mean.all.3datasets)
   
-fitResults.pots.m <- fitResults.pots.m %>%
-  left_join(CV.mean.all.3datasets)
+
+ggplot(data=subset(fitResults.pots.m, leafType=="F8"), aes(y=leaf.area.mm2, x=LAmax, colour=watering)) +
+  geom_point() + geom_smooth(method="lm", se=F) + geom_abline(slope=1, intercept=0) +
+  ylab("Leaf area of L9 (scanned individual leaf)") + xlab("Leaf area of L8 (measured on rosettes)") +
+  facet_wrap(.~leafType) +
+  theme_bw()
+
+ggplot(data=subset(fitResults.pots.m, leafType %in% c("F8", "F+2")), aes(y=ER, x=SLA, colour=watering)) +
+  geom_point() + geom_smooth(method="lm", se=F) + 
+  facet_wrap(.~leafType)
+
+ggplot(data=subset(fitResults.pots.m, leafType %in% c("F8")), aes(y=Leaf_8_WW, x=ER, colour=watering)) +
+  geom_point() + geom_smooth(method="lm", se=F) + 
+  scale_x_log10() +
+  facet_wrap(.~leafType)
+
 
 ggplot(data=subset(fitResults.pots.m, leafType=="F8" & !(nameGen %in% "Rennes-1") & watering=="WW"), aes(x=Leaf_8_WW, y=ER, colour=watering)) +
   geom_point() + geom_smooth(method="lm", se=F) +
