@@ -1,0 +1,262 @@
+---
+title: "STOCOdrought - C3M40 -  SWC evolution"
+author: "Aude Coupel-Ledru"
+date: "`r format(Sys.time(), '%d/%m/%Y %H:%M:%S')`"
+colorlinks: true
+output:
+  html_document:
+    code_folding: "hide"
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    number_sections: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+
+
+# Data
+```{r}
+dat <- read.csv("C:/Users/coupelle/Documents/00_POSTDOC_BRISTOL/Exp_EPPN/C3M40/Irrigation/Automaton.csv",h=T)
+
+# dat <- rbind(dat,dat2,dat3)
+# dat %>% separate(dat$idPotManip, c("Manip", "idPot"))
+
+# dat4 <- read.csv2("D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/C3M40-20062902.csv",h=T)
+# dat <- dat4
+
+##-------Data info
+info <- read.csv2("C:/Users/coupelle/Documents/00_POSTDOC_BRISTOL/Exp_EPPN/C3M40/Exp_STOCOdrought_1_INFO.csv")
+head(info)
+
+info$Manip <- "C3M40"
+info$idPotManip <- paste0(info$Manip,"-",info$ID)
+
+#match infos into dat
+dat[c("Genotype_Scenario", "Genotype" ,"Scenario","Mutant", "Plateau", "X_plateau", "Y")] <- info[match(dat$idPotManip,info$idPotManip),c("Genotype_Scenario", "Genotype" ,"Scenario","Mutant", "Plateau", "X_plateau", "Y")]
+
+##------ Data poting
+pot <- read.csv2("C:/Users/coupelle/Documents/00_POSTDOC_BRISTOL/Exp_EPPN/C3M40/Potting/C3M40_potting_data.csv")
+head(pot)
+names(pot) <- c("idPot","W_pot1","W_pot2","W_filet","W_potting_pots.filet.soil","idBox","FW_box.soil","DW_box.soil","W_emptybox","test","SWC_potting","W_dry_soil","W_target.start")
+pot$Manip <- "C3M40"
+pot$idPotManip <- paste0(pot$Manip,"-",pot$idPot)
+
+#match potting data into dat
+dat[c("W_pot1" ,"W_pot2", "W_filet", "W_potting_pots.filet.soil","SWC_potting", "W_dry_soil")] <- pot[match(dat$idPotManip,pot$idPotManip),c("W_pot1", "W_pot2", "W_filet", "W_potting_pots.filet.soil","SWC_potting", "W_dry_soil")]
+
+
+# formatting columns
+dat$date <- as.POSIXct(strptime(dat$date, format="%Y-%m-%d %H:%M:%S"))
+dat$Date <- as.Date(dat$date,format="%Y-%m-%d")
+
+
+
+# Calculation SWC
+dat$SWC_before <- NA
+dat$SWC_after <- NA
+
+dat$poidsApresArrosage <- as.numeric(as.character(dat$poidsApresArrosage))
+dat$poidsAvantArrosage <- as.numeric(as.character(dat$poidsAvantArrosage))
+
+dat_1pot <- dplyr::filter(dat,dat$nbPot==1)
+dat_2pot <- dplyr::filter(dat,dat$nbPot==2)
+
+dat_1pot$SWC_before <- (dat_1pot$poidsAvantArrosage  - dat_1pot$W_pot2 - dat_1pot$W_filet - dat_1pot$W_dry_soil) / dat_1pot$W_dry_soil
+dat_1pot$SWC_after <-  (dat_1pot$poidsApresArrosage  - dat_1pot$W_pot2 - dat_1pot$W_filet - dat_1pot$W_dry_soil) / dat_1pot$W_dry_soil
+
+dat_2pot$SWC_before <- (dat_2pot$poidsAvantArrosage - dat_2pot$W_pot1 - dat_2pot$W_pot2 - dat_2pot$W_filet - dat_2pot$W_dry_soil) / dat_2pot$W_dry_soil
+dat_2pot$SWC_after <-  (dat_2pot$poidsApresArrosage - dat_2pot$W_pot1 - dat_2pot$W_pot2 - dat_2pot$W_filet - dat_2pot$W_dry_soil) / dat_2pot$W_dry_soil
+
+
+dat <- rbind(dat_1pot,dat_2pot)
+
+# if(dat$nbPot>1) {  
+#   dat$SWC_before <- (dat$poidsAvantArrosage - dat$W_pot1 - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+#   dat$SWC_after <-  (dat$poidsApresArrosage - dat$W_pot1 - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+# } else {
+#    dat$SWC_before <- (dat$poidsAvantArrosage  - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+#    dat$SWC_after <-  (dat$poidsApresArrosage  - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+# }
+
+
+# write.csv(dat,"D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/swc_20200629.csv")
+
+
+datOK <- dplyr::filter(dat,dat$Date > "2020-06-15")
+
+datOK$Scenario = factor(datOK$Scenario, levels=c("WW","WD1","WD2","WD3"), labels=c("WW","WD1 (early and sustained WD)","WD2 (early WD to be followed by rewatering)","WD3 (late WD)")) 
+
+
+```
+
+
+
+
+
+```{r}
+ggplot(datOK, aes(x =date, y = SWC_after, color=Genotype)) +
+  geom_point()+
+  facet_wrap(~Scenario,ncol=4)+
+  ylab("SWC after watering")+
+  egg::theme_article()
+
+
+# Focus à partir de stade 2F
+dat2F <- dplyr::filter(datOK,datOK$Date >="2020-06-19")
+ggplot(dat2F, aes(x =date, y = SWC_after, color=Genotype)) +
+  geom_point()+
+  facet_wrap(~Scenario,ncol=4)+
+  ylab("SWC after watering")+
+  egg::theme_article()
+
+
+dat26 <- dplyr::filter(dat,dat$Date == "2020-06-26")
+summary(dat26)
+
+
+# write.csv(dat26,"D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/Data_swc_20200626.csv")
+
+
+
+
+```
+
+
+```{r}
+dat2July <- dplyr::filter(datOK,Date == "2020-07-02",!is.na(SWC_after))
+
+```
+
+
+
+## Time since SWC stabilized (WD2)
+```{r}
+datWD2 <- dplyr::filter(datOK, Scenario=="WD2 (early WD to be followed by rewatering)")
+datWD2 <- droplevels(datWD2)
+
+list_WD2 <- levels(datWD2$idPotManip)
+
+
+WD2_dates <-  as.data.frame(matrix(nrow=0, ncol = 3))
+colnames(WD2_dates) = c("idPotManip", "date_target_reached","date_rewatering")
+
+
+for (plant in list_WD2) {
+  WD2_dates.plant <-  as.data.frame(matrix(nrow=1, ncol = 3))
+  colnames(WD2_dates.plant) = c("idPotManip", "date_target_reached","date_rewatering")
+  
+  sub.plant <- dplyr::filter(datWD2,idPotManip==plant)
+  sub.plant.WD <- dplyr::filter(sub.plant,SWC_after<=0.72)
+  date.reach <- min(sub.plant.WD$Date)
+  date.rewater <- date.reach + 8
+  
+  WD2_dates.plant$idPotManip <- plant
+  WD2_dates.plant$date_target_reached <- date.reach
+  WD2_dates.plant$date_rewatering <- date.rewater
+  
+  WD2_dates <- rbind(WD2_dates,WD2_dates.plant)
+}
+
+
+write.csv(WD2_dates,"D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/WD2_suivi_reirrig.csv",row.names=FALSE)
+
+
+summary(WD2_dates)
+
+WD2_dates$date_rewatering <- as.factor(WD2_dates$date_rewatering)
+WD2_dates$date_target_reached <- as.factor(WD2_dates$date_target_reached)
+WD2_dates$idPotManip <- as.factor(WD2_dates$idPotManip)
+
+```
+
+
+## Check SWC 3/07
+```{r}
+dat <- read.csv2("D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/irrig20200702-03.csv",h=T)
+
+# dat <- rbind(dat,dat2,dat3)
+# dat %>% separate(dat$idPotManip, c("Manip", "idPot"))
+
+# dat4 <- read.csv2("D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/C3M40-20062902.csv",h=T)
+# dat <- dat4
+
+##-------Data info
+info <- read.csv2("D:/00_POSTDOC_BRISTOL/Exp_EPPN/Exp_STOCOdrought_1_INFO.csv")
+head(info)
+
+info$Manip <- "C3M40"
+info$idPotManip <- paste0(info$Manip,"-",info$ID)
+
+#match infos into dat
+dat[c("Genotype_Scenario", "Genotype" ,"Scenario","Mutant", "Plateau", "X_plateau", "Y")] <- info[match(dat$idPotManip,info$idPotManip),c("Genotype_Scenario", "Genotype" ,"Scenario","Mutant", "Plateau", "X_plateau", "Y")]
+
+##------ Data poting
+pot <- read.csv2("D:/00_POSTDOC_BRISTOL/Exp_EPPN/Potting/C3M40_potting_data.csv")
+head(pot)
+names(pot) <- c("idPot","W_pot1","W_pot2","W_filet","W_potting_pots.filet.soil","idBox","FW_box.soil","DW_box.soil","W_emptybox","test","SWC_potting","W_dry_soil","W_target.start")
+pot$Manip <- "C3M40"
+pot$idPotManip <- paste0(pot$Manip,"-",pot$idPot)
+
+#match potting data into dat
+dat[c("W_pot1" ,"W_pot2", "W_filet", "W_potting_pots.filet.soil","SWC_potting", "W_dry_soil")] <- pot[match(dat$idPotManip,pot$idPotManip),c("W_pot1", "W_pot2", "W_filet", "W_potting_pots.filet.soil","SWC_potting", "W_dry_soil")]
+
+
+# formatting columns
+dat$date <- as.POSIXct(strptime(dat$date, format="%d/%m/%Y %H:%M"))
+dat$Date <- as.Date(dat$date,format="%Y-%m-%d")
+
+
+
+# Calculation SWC
+dat$SWC_before <- NA
+dat$SWC_after <- NA
+
+dat$poidsApresArrosage <- as.numeric(as.character(dat$poidsApresArrosage))
+dat$poidsAvantArrosage <- as.numeric(as.character(dat$poidsAvantArrosage))
+
+dat_1pot <- dplyr::filter(dat,dat$nbPot==1)
+dat_2pot <- dplyr::filter(dat,dat$nbPot==2)
+
+dat_1pot$SWC_before <- (dat_1pot$poidsAvantArrosage  - dat_1pot$W_pot2 - dat_1pot$W_filet - dat_1pot$W_dry_soil) / dat_1pot$W_dry_soil
+dat_1pot$SWC_after <-  (dat_1pot$poidsApresArrosage  - dat_1pot$W_pot2 - dat_1pot$W_filet - dat_1pot$W_dry_soil) / dat_1pot$W_dry_soil
+
+dat_2pot$SWC_before <- (dat_2pot$poidsAvantArrosage - dat_2pot$W_pot1 - dat_2pot$W_pot2 - dat_2pot$W_filet - dat_2pot$W_dry_soil) / dat_2pot$W_dry_soil
+dat_2pot$SWC_after <-  (dat_2pot$poidsApresArrosage - dat_2pot$W_pot1 - dat_2pot$W_pot2 - dat_2pot$W_filet - dat_2pot$W_dry_soil) / dat_2pot$W_dry_soil
+
+
+dat <- rbind(dat_1pot,dat_2pot)
+
+# if(dat$nbPot>1) {  
+#   dat$SWC_before <- (dat$poidsAvantArrosage - dat$W_pot1 - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+#   dat$SWC_after <-  (dat$poidsApresArrosage - dat$W_pot1 - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+# } else {
+#    dat$SWC_before <- (dat$poidsAvantArrosage  - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+#    dat$SWC_after <-  (dat$poidsApresArrosage  - dat$W_pot2 - dat$W_filet - dat$W_dry_soil) / dat$W_dry_soil
+# }
+
+
+# write.csv(dat,"D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/swc_20200629.csv")
+
+
+datOK <- dplyr::filter(dat,dat$Date > "2020-07-02")
+datOK
+
+
+write.csv(datOK,"D:/00_POSTDOC_BRISTOL/Exp_EPPN/Irrigation/swc_20200703.csv")
+
+datOK$Scenario = factor(datOK$Scenario, levels=c("WW","WD1","WD2","WD3"), labels=c("WW","WD1 (early and sustained WD)","WD2 (early WD to be followed by rewatering)","WD3 (late WD)")) 
+
+
+```
+
+
+

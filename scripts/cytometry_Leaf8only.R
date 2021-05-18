@@ -234,14 +234,13 @@ dfCV.L8$nameGen.OrderedL8_WW <- factor(dfCV.L8$nameGen.OrderedL8_WW,
                                           levels =levels(dfCV.L8$nameGen.OrderedL8_WW)[order(CV.mean.L8.wide$Leaf_8_WW)])
 
 pdf("./figures/cycleValue_30_genotypes.L8.pdf", 12, 8)
-
 ggplot(data=subset(dfCV.L8, tissueType.ord%in%c("Leaf_8")), 
        aes(y=cycleValue, x=nameGen.OrderedL8_WW, fill=watering)) +
   geom_boxplot(outlier.alpha = 0) +
   xlab("Accessions (ordered by L8_WW CV)") +
   ylab("Cycle value") +
   scale_fill_manual(values=c("#386FA4", "#84D2F6")) +
-  theme_bw() +
+  theme_bw() + myTheme +
   theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
 
 dev.off()
@@ -266,4 +265,10 @@ ggplot(dfCV.L8_all, aes(x=cycleValue.x, y=cycleValue.y)) +
   theme(text = element_text(size=16))
 dev.off()
 system("open ./figures/cycleValue_correlations.L8_vs_all_bw_fac_0.8.pdf")
+
+
+dfCV.L8 %>%
+  select(cycleValue, idPot, nameGen, tissueType.ord) %>%
+  left_join(subset(d.SLA, stage == "L9" & !(nameGen %in% c("IP-Vis-0", "IP-Hum-2", "Kulturen-1", "Com-1"))), by=c("idPot"="idPot")) %>%
+  ggplot(., aes(y=leaf.area.mm2, x=cycleValue)) + geom_point() + geom_smooth(method=lm)
 

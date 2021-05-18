@@ -34,7 +34,8 @@ ggplot(subset(ilg1, idGenotype=="An-1"), aes(x=day, y=Area.total.mm2, colour=wat
 pdf("./figures/individual_leaf_growth_Benoit.pdf", 11, 10)
 for(i in unique(ilg1$idGenotype)) {
 gp.ilg <- ggplot(subset(ilg1, idGenotype==i), aes(x=day, y=Area.total.mm2, colour=as.factor(idPot))) +
-  geom_point() + geom_line(aes(linetype=leafType)) +
+  geom_point() + 
+  geom_line(aes(linetype=leafType)) +
   facet_wrap(.~idGenotype+leafType+watering, ncol = 2)
 print(gp.ilg)
 }
@@ -107,6 +108,7 @@ fitResults_F_2$leafType <- "F+2"
 fitResults.pots <- rbind(fitResults_F8, fitResults_F_5, fitResults_F_2)
 
 
+
 # Plot ERmax ----
 
 fitResults.pots <- fitResults.pots %>%
@@ -125,23 +127,58 @@ ggplot(subset(fitResults.pots, leafType=="F8" & !(idPot %in% c(110))), aes(y=ER,
 dev.off()
 system("open ./figures/ER_F8_genotypes.pdf")
 
+pdf("./figures/ER_F_5_genotypes.pdf", 10, 6)
+ggplot(subset(fitResults.pots, leafType=="F-5" & !(idPot %in% c(110))), aes(y=ER, x=interaction(watering, nameGen), fill=watering)) +
+  geom_boxplot() +
+  ylab(expression(paste("Leaf -5 max. expansion rate (", mm^2," ", d^-1, ")"))) +
+  xlab("") +
+  theme(axis.title = element_text(size=14),
+        axis.text = element_text(size=12, colour="black", angle=90, hjust=1),
+        legend.position = "none")
+dev.off()
+system("open ./figures/ER_F_5_genotypes.pdf")
+
 d.SLA.m.0$leafType <- factor(d.SLA.m.0$stage, labels = c("F+2", "F8"))
 
 fitResults.pots.m <- fitResults.pots %>%
   group_by(nameGen, watering, leafType) %>%
   summarise(ER = mean(ER, na.rm=T),
-            LAmax = mean(A, na.rm=T), 
+            A = mean(A, na.rm=T),
+            B = mean(B, na.rm=T),
+            X0 = mean(X0, na.rm=T),
             Duration = mean(Duration, na.rm=T)) %>%
   left_join(d.SLA.m.0) %>%
   left_join(CV.mean.all.3datasets)
+
+# Plot sigmoidal growth curves ----
+
+fun.sigm <- function(x, A, B, X0) {
+  y = A / ( 1 + exp (-((x - X0) / B)))
+  return(y) 
+  }
+
+fitResults.pots.m
+
+ggplot(data.frame(x = c(0, 30)), aes(x)) + ylab("Leaf area (mm2)") +
+  mapply(function(A, B, X0, nameGen, watering) {
+    stat_function(fun = fun.sigm, args = list(A = A, B = B, X0=X0), aes(colour=nameGen, linetype=watering)) 
+  }, 
+  # enter A, B, and colors here
+  A = subset(fitResults.pots.m, leafType=="F8")$A, 
+  B = subset(fitResults.pots.m, leafType=="F8")$B,
+  X0 = subset(fitResults.pots.m, leafType=="F8")$X0,
+  nameGen = subset(fitResults.pots.m, leafType=="F8")$nameGen,
+  watering = subset(fitResults.pots.m, leafType=="F8")$watering)
 
 
 fitResults.pots.m.wide <- dcast(fitResults.pots.m, formula=nameGen + leafType ~ watering, mean, value.var="ER")
 
 fitResults.pots.m.wide <- fitResults.pots.m.wide %>%
+  dplyr::filter(nameGen != "Rennes-1") %>%
   mutate(ERrr = WD/WW) %>%
   left_join(CV.mean.all.3datasets)
-  
+
+fitResults.pots.m.wide$nameGen.ord <- factor(fitResults.pots.m.wide$nameGen, levels = subset(fitResults.pots.m.wide, leafType=="F8")$nameGen[order(subset(fitResults.pots.m.wide, leafType=="F8")$ERrr, decreasing=T)])
 
 ggplot(data=subset(fitResults.pots.m, leafType=="F8"), aes(y=leaf.area.mm2, x=LAmax, colour=watering)) +
   geom_point() + geom_smooth(method="lm", se=F) + geom_abline(slope=1, intercept=0) +
@@ -164,17 +201,39 @@ ggplot(data=subset(fitResults.pots.m, leafType=="F8" & !(nameGen %in% "Rennes-1"
   facet_wrap(.~leafType) +
   theme_bw()
 
-ggplot(data=subset(fitResults.pots.m, leafType=="F-5" & !(nameGen %in% "Rennes-1") & watering=="WW"), aes(x=Leaf_30_WW, y=ER, colour=clust)) +
+ggplot(data=subset(fitResults.pots.m, leafType=="F+2" & !(nameGen %in% "Rennes-1") & watering=="WW"), aes(x=Seedling_Leaf5_WW, y=ER, colour=clust)) +
   geom_point(size=4) + 
   facet_wrap(.~leafType) +
   theme_bw()
 
 ggplot(fitResults.pots.m.wide, aes(x=Seedling_Leaf5_WW, y=ERrr, colour=leafType)) +
   geom_point() + facet_wrap(.~leafType)
-
-ggplot(subset(fitResults.pots.m.wide, leafType=="F8"), aes(x=Leaf_8_WW, y=WD/WW)) +
-  geom_text_repel(aes(label=nameGen)) +
+ggplot(fitResults.pots.m.wide, aes(x=Leaf_8_WW, y=ERrr, colour=leafType)) +
   geom_point() + facet_wrap(.~leafType)
+
+ggplot(subset(fitResults.pots.m.wide, leafType=="F8" & nameGen != "Rennes-1"), aes(x=nameGen.ord, y=ERrr)) + geom_bar(stat = "identity")
+
+gp.RR <- ggplot(subset(fitResults.pots.m.wide, leafType=="F-5"), aes(x=Leaf_8_WD/Leaf_8_WW, y=ERrr)) +
+  geom_point() +
+  geom_smooth(method=lm, formula = y~x, se=F) +
+  geom_text_repel(aes(label=nameGen)) +
+ # facet_wrap(.~leafType) +
+  myTheme
+
+pdf("./figures/change_LER_EF.pdf", 6, 6)
+gp.RR + xlab("Change in leaf 8 EF") + ylab("Change in L30 ER")
+gp.RR %+% subset(fitResults.pots.m.wide, leafType=="F8") + xlab("Change in L8 EF") + ylab("Change in L8  expansion rate")
+gp.RR + aes(x=Leaf_30_WD/Leaf_30_WW, y=ERrr) + xlab("Change in leaf 30 EF") +
+  ylab("Change in L30 expansion rate")
+dev.off()
+system("open ./figures/change_LER_EF.pdf")
+
+gp.RR %+% subset(fitResults.pots.m.wide, leafType=="F8") + aes(y=ERrr, x=Seedling_Leaf5_WW)
+
+ggplot(subset(fitResults.pots.m.wide, leafType=="F-5"), aes(x=Leaf_8_WD/Leaf_8_WW, y=ERrr)) +
+  geom_text_repel(aes(label=nameGen)) +
+  geom_point() + facet_wrap(.~leafType) +
+  geom_smooth(method=lm, formula = y~x, se=F)
 
 ggplot(subset(fitResults.pots.m.wide, leafType=="F+2"), aes(x=Leaf_8_WD/Leaf_8_WW, y=WD/WW, colour=clust)) + geom_text_repel(aes(label=nameGen)) +
   geom_point() + facet_wrap(.~leafType)

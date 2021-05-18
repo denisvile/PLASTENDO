@@ -215,11 +215,64 @@ dfCV.L30[dfCV.L30$tissueType.ord=="Seedling_Leaf5", "watering"] <- "WW"
 dfCV.L30$watering <- factor(dfCV.L30$watering, levels = c("WW", "WD"))
 
 CV.mean.L30 <- subset(dfCV.L30) %>%
-  select(nameGen, tissueType.ord, watering, cycleValue) %>%
+  mutate(p2C=x2C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p4C=x4C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p8C=x8C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p16C=x16C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p32C=x32C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p64C=x64C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p128C=x128C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C),
+         p256C=x256C/(x2C+x4C+x8C+x16C+x32C+x64C+x128C+x256C)) %>%
+  select(idPot, nameGen, tissueType.ord, watering, cycleValue, p2C,p4C,p8C,p16C,p32C,p64C,p128C,p256C) %>%
   group_by(nameGen, tissueType.ord, watering) %>%
-  summarize(CVmean = mean(cycleValue))
+  summarize(CVmean = mean(cycleValue),
+            p2C = mean(p2C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p4C = mean(p4C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p8C = mean(p8C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p16C = mean(p16C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p32C = mean(p32C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p64C = mean(p64C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p128C = mean(p128C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)),
+            p256C = mean(p256C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C))) %>%
+  mutate(p2C=p2C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p4C=p4C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p8C=p8C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p16C=p16C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p32C=p32C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p64C=p64C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p128C=p128C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C),
+         p256C=p256C/(p2C+p4C+p8C+p16C+p32C+p64C+p128C+p256C)) 
 
 CV.mean.L30.wide <- dcast(CV.mean.L30, formula=nameGen~tissueType.ord + watering, mean, value.var = "CVmean")
+
+CV.mean.L30.long <- CV.mean.L30 %>%
+  select(nameGen, tissueType.ord, watering, p2C,p4C,p8C,p16C,p32C,p64C,p128C,p256C) %>%
+  tidyr::pivot_longer(cols=c(p2C,p4C,p8C,p16C,p32C,p64C,p128C,p256C)) %>%
+  mutate(name=factor(name, levels=c("p2C","p4C","p8C","p16C","p32C","p64C","p128C","p256C"),
+                     labels=c("2C","4C","8C","16C","32C","64C","128C","256C")))
+
+CV.mean.L30.long$nameGen.OrderedL30_WW <- as.factor(CV.mean.L30.long$nameGen)
+CV.mean.L30.long$nameGen.OrderedL30_WW <- factor(CV.mean.L30.long$nameGen.OrderedL30_WW,
+                              levels =levels(CV.mean.L30.long$nameGen.OrderedL30_WW)[order(CV.mean.L30.wide$Leaf_30_WW)])
+         
+gp.percentNuclei <- ggplot(subset(CV.mean.L30.long, watering=="WW"), aes(y=value, x=nameGen.OrderedL30_WW, fill=forcats::fct_rev(name))) + 
+  geom_bar(position="fill", stat="identity", width=1) +
+  ylab("% of nuclei in leaf #30") + xlab("") +
+  coord_cartesian(ylim=c(0,1), expand = F) +
+  facet_wrap(vars(
+    # Change factor level name
+    fct_recode(watering, "Well-watered condition" = "WW"))
+    ) +
+  scale_fill_grey("Size class") +
+  myTheme + 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5),
+        strip.background = element_rect(fill="transparent"),
+        strip.text = element_text(size=14))
+pdf("./figures/percent-nuclei_L30_WW.pdf", 8, 7)
+gp.percentNuclei
+dev.off()
+system("open ./figures/percent-nuclei_L30_WW.pdf")
 
 dfCV.L30$nameGen.OrderedL30_WW <- as.factor(dfCV.L30$nameGen)
 dfCV.L30$nameGen.OrderedL30_WW <- factor(dfCV.L30$nameGen.OrderedL30_WW,
@@ -259,3 +312,7 @@ ggplot(dfCV.L30_all, aes(x=cycleValue.x, y=cycleValue.y)) +
 dev.off()
 system("open ./figures/cycleValue_correlations.L30_vs_all_bw_fac_0.8.pdf")
 
+dfCV.L30 %>%
+  select(cycleValue, idPot, nameGen, tissueType.ord) %>%
+  left_join(subset(d.SLA, stage == "L30" ), by=c("idPot"="idPot")) %>%
+  ggplot(., aes(y=leaf.area.mm2, x=cycleValue)) + geom_point() + geom_smooth(method=lm)

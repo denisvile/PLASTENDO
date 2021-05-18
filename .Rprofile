@@ -9,3 +9,4 @@ library(ggrepel)
 
 # devtools::install_github("yeukyul/lindia")
 library(lindia)
+library(forcats)

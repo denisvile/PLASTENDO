@@ -146,8 +146,34 @@ d.SLA.m <- subset(d.SLA, idPot != 312 & stage %in% c("L9", "L30")) %>%
                    leaf.dry.mass = mean(dry_weight_mg, na.rm=T)) %>%
   left_join(CV.mean.watering.long)
 
+d.SLA.m.wide <- d.SLA.m %>% tidyr::pivot_wider(names_from=watering, values_from=c(SLA, Leaf_CV, leaf.area.mm2, leaf.dry.mass)) %>%
+  mutate(Leaf_CV_rr = Leaf_CV_WD/Leaf_CV_WW,
+         leaf.area.mm2_rr = leaf.area.mm2_WD/leaf.area.mm2_WW,
+         leaf.dry.mass_rr = leaf.dry.mass_WD/leaf.dry.mass_WW) %>%
+  left_join(CV.mean.all.3datasets[, c("nameGen", "Seedling_Leaf5_WW")])
+
+
+pdf("./figures/change_Area_EF_L8.pdf", 6, 6)
+ggplot(data=subset(d.SLA.m.wide, stage=="L9" & nameGen !="Kulturen-1"), aes(x=Leaf_CV_rr, y=leaf.area.mm2_rr)) + geom_point() +
+  geom_text_repel(aes(label=nameGen)) +
+  geom_smooth(method=lm, formula=y~x, se=F) +
+  ylab("Change in leaf #9 area") + xlab("Change in leaf #8 endopolyploidy") +
+  myTheme
+dev.off()
+system("open ./figures/change_Area_EF_L8.pdf")
+
+pdf("./figures/channge_Area_EF_L8_WW.pdf", 6, 6)
+ggplot(data=subset(d.SLA.m.wide, stage=="L9" & nameGen !="Kulturen-1"), 
+       aes(x=Leaf_CV_WW, y=leaf.area.mm2_rr)) + geom_point() +
+  geom_text_repel(aes(label=nameGen)) +
+  #geom_smooth(method=lm, formula=y~x, se=F) +
+  ylab("Change in leaf #9 area") + xlab("Leaf #8 endopolyploidy under WW") +
+  myTheme
+dev.off()
+system("open ./figures/channge_Area_EF_L8_WW.pdf")
+
 ggplot(subset(d.SLA.m, stage=="L9"),
-       aes(x=Leaf_CV, y=leaf.area.mm2)) + 
+       aes(x=Leaf_CV, y=leaf.area.mm2_rr)) + 
   geom_point(aes(colour=watering)) +
   geom_smooth(method=lm, se=F) + geom_smooth(aes(colour=watering), method=lm, se=F) +
   geom_text_repel(aes(label=nameGen)) +
@@ -175,5 +201,5 @@ ggplot(., aes(x=Leaf_CV, y=leaf.area.mm2)) +
   facet_wrap(.~stage)
 
 
-ggplot(subset(d.SLA.m), aes(x=Seedling_Leaf5_WW, y=SLA)) + geom_point() 
+ggplot(subset(d.SLA.m), aes(x=Leaf_CV, y=SLA, colour=watering)) + geom_point() + geom_smooth(method="lm")
        

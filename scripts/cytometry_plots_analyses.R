@@ -26,14 +26,16 @@ system("open ./figures/cycleValue_correlations.Lsdlg_vs_all_bw_fac_0.5.pdf")
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
 # Boxplot of cycle value for seelings leaves ----
 # €€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€
-pdf("./figures/cycleValue_30_genotypes.Lsdlg.pdf", 12, 8)
+
 gp.CV.sdlg <- ggplot(data=subset(dfCV.Lsdlg, tissueType.ord%in%c("Seedling_Leaf5")), 
        aes(y=cycleValue, x=nameGen.OrderedLsdlg_WW, fill=clust)) +
   geom_boxplot(outlier.alpha = 0) +
   xlab("Accessions (ordered by Lsdlg_WW CV)") +
-  ylab("Cycle value") +
-  theme_bw() +
+  ylab("Endoreduplication factor") +
+  theme_bw() + myTheme +
   theme(axis.text.x = element_text(angle=90, hjust = 1, vjust = 0.5))
+pdf("./figures/cycleValue_30_genotypes.Lsdlg.pdf", 12, 8)
+gp.CV.sdlg
 dev.off()
 system("open ./figures/cycleValue_30_genotypes.Lsdlg.pdf")
 
@@ -43,7 +45,7 @@ CV.mean.all.3datasets <- CV.mean.L30.wide %>%
   left_join(CV.mean.Lsdlg.wide)
 
 gp.corr.3datasets <- ggplot(data=CV.mean.all.3datasets, aes(x = Seedling_Leaf5_WW, y = Leaf_8_WW)) +
-  geom_point() + geom_smooth(method = lm, se=F)
+  geom_point() + geom_smooth(method = lm, se=F) 
 
 pdf("./figures/cycleValue_30_genotypes_correlations.3datasets.pdf", 8, 7)
 gp.corr.3datasets + geom_abline(slope = 1, intercept = 0) 
