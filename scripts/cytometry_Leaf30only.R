@@ -268,7 +268,8 @@ gp.percentNuclei <- ggplot(subset(CV.mean.L30.long, watering=="WW"), aes(y=value
   theme(legend.position = "right",
         axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5),
         strip.background = element_rect(fill="transparent"),
-        strip.text = element_text(size=14))
+        strip.text = element_text(size=14),
+        panel.border=element_rect(fill="transparent", size=0.75))
 pdf("./figures/percent-nuclei_L30_WW.pdf", 8, 7)
 gp.percentNuclei
 dev.off()

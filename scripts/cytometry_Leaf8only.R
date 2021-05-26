@@ -229,6 +229,64 @@ CV.mean.L8 <- subset(dfCV.L8) %>%
 
 CV.mean.L8.wide <- dcast(CV.mean.L8, formula=nameGen~tissueType.ord + watering, mean, value.var = "CVmean")
 
+############################
+CV.mean.L8 <- subset(dfCV.L8) %>%
+  mutate(p2C=x2C/(x2C+x4C+x8C+x16C+x32C+x64C),
+         p4C=x4C/(x2C+x4C+x8C+x16C+x32C+x64C),
+         p8C=x8C/(x2C+x4C+x8C+x16C+x32C+x64C),
+         p16C=x16C/(x2C+x4C+x8C+x16C+x32C+x64C),
+         p32C=x32C/(x2C+x4C+x8C+x16C+x32C+x64C),
+         p64C=x64C/(x2C+x4C+x8C+x16C+x32C+x64C)) %>%
+  select(idPot, nameGen, tissueType.ord, watering, cycleValue, p2C,p4C,p8C,p16C,p32C,p64C) %>%
+  group_by(nameGen, tissueType.ord, watering) %>%
+  summarize(CVmean = mean(cycleValue),
+            p2C = mean(p2C/(p2C+p4C+p8C+p16C+p32C+p64C)),
+            p4C = mean(p4C/(p2C+p4C+p8C+p16C+p32C+p64C)),
+            p8C = mean(p8C/(p2C+p4C+p8C+p16C+p32C+p64C)),
+            p16C = mean(p16C/(p2C+p4C+p8C+p16C+p32C+p64C)),
+            p32C = mean(p32C/(p2C+p4C+p8C+p16C+p32C+p64C)),
+            p64C = mean(p64C/(p2C+p4C+p8C+p16C+p32C+p64C))) %>%
+  mutate(p2C=p2C/(p2C+p4C+p8C+p16C+p32C+p64C),
+         p4C=p4C/(p2C+p4C+p8C+p16C+p32C+p64C),
+         p8C=p8C/(p2C+p4C+p8C+p16C+p32C+p64C),
+         p16C=p16C/(p2C+p4C+p8C+p16C+p32C+p64C),
+         p32C=p32C/(p2C+p4C+p8C+p16C+p32C+p64C),
+         p64C=p64C/(p2C+p4C+p8C+p16C+p32C+p64C)) 
+
+CV.mean.L8.wide <- dcast(CV.mean.L8, formula=nameGen~tissueType.ord + watering, mean, value.var = "CVmean")
+
+CV.mean.L8.long <- CV.mean.L8 %>%
+  select(nameGen, tissueType.ord, watering, p2C,p4C,p8C,p16C,p32C,p64C) %>%
+  tidyr::pivot_longer(cols=c(p2C,p4C,p8C,p16C,p32C,p64C)) %>%
+  mutate(name=factor(name, levels=c("p2C","p4C","p8C","p16C","p32C","p64C"),
+                     labels=c("2C","4C","8C","16C","32C","64C")))
+
+CV.mean.L8.long$nameGen.OrderedL8_WW <- as.factor(CV.mean.L8.long$nameGen)
+CV.mean.L8.long$nameGen.OrderedL8_WW <- factor(CV.mean.L8.long$nameGen.OrderedL8_WW,
+                                                 levels =levels(CV.mean.L8.long$nameGen.OrderedL8_WW)[order(CV.mean.L8.wide$Leaf_8_WW)])
+
+gp.percentNuclei_L8 <- ggplot(subset(CV.mean.L8.long), aes(y=value, x=nameGen.OrderedL8_WW, fill=forcats::fct_rev(name))) + 
+  geom_bar(position="fill", stat="identity", width=1) +
+  ylab("% of nuclei in leaf #8") + xlab("") +
+  coord_cartesian(ylim=c(0,1), expand = F) +
+  facet_wrap(vars(
+    # Change factor level name
+    fct_recode(watering, "Well-watered" = "WW", "Water deficit"="WD"))
+  ) +
+  scale_fill_grey("Size class") +
+  myTheme + 
+  theme(legend.position = "right",
+        axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5),
+        strip.background = element_rect(fill="transparent"),
+        strip.text = element_text(size=14),
+        panel.border=element_rect(fill="transparent", size=0.75))
+pdf("./figures/percent-nuclei_L8_WW.pdf", 14, 7)
+gp.percentNuclei_L8
+dev.off()
+system("open ./figures/percent-nuclei_L8_WW.pdf")
+
+############################
+
 dfCV.L8$nameGen.OrderedL8_WW <- as.factor(dfCV.L8$nameGen)
 dfCV.L8$nameGen.OrderedL8_WW <- factor(dfCV.L8$nameGen.OrderedL8_WW,
                                           levels =levels(dfCV.L8$nameGen.OrderedL8_WW)[order(CV.mean.L8.wide$Leaf_8_WW)])

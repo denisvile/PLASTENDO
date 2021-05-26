@@ -4,7 +4,7 @@ textSize <- 14
 
 myTheme <- theme(
   panel.background=element_rect(fill="transparent", color= "black", size = 1),  
-  plot.background = element_rect(fill = "transparent",colour = NA),
+  plot.background = element_rect(fill = "transparent", colour = NA),
   axis.line=element_blank(), # line(color="black", size = 1), 
   axis.title=element_text(size=textSize),
   axis.text.y=element_text(size=textSize, colour="black"), 

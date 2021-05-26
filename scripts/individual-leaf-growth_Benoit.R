@@ -117,23 +117,23 @@ fitResults.pots$watering <- factor(fitResults.pots$watering, levels = c("WW", "W
 
 # idPot = 110 removed because of pot number mistake
 pdf("./figures/ER_F8_genotypes.pdf", 10, 6)
-ggplot(subset(fitResults.pots, leafType=="F8" & !(idPot %in% c(110))), aes(y=ER, x=interaction(watering, nameGen), fill=watering)) +
+ggplot(subset(fitResults.pots, leafType=="F8" & !(idPot %in% c(110))), aes(y=ER, x=nameGen, fill=watering)) +
   geom_boxplot() +
   ylab(expression(paste("Leaf 8 max. expansion rate (", mm^2," ", d^-1, ")"))) +
-  xlab("") +
+  xlab("") + myTheme + 
   theme(axis.title = element_text(size=14),
-        axis.text = element_text(size=12, colour="black", angle=90, hjust=1),
-        legend.position = "none")
+        axis.text.x = element_text(size=12, colour="black", angle=90, hjust=1, vjust=0.5),
+        legend.position = "right")
 dev.off()
 system("open ./figures/ER_F8_genotypes.pdf")
 
 pdf("./figures/ER_F_5_genotypes.pdf", 10, 6)
-ggplot(subset(fitResults.pots, leafType=="F-5" & !(idPot %in% c(110))), aes(y=ER, x=interaction(watering, nameGen), fill=watering)) +
+ggplot(subset(fitResults.pots, leafType=="F-5" & !(idPot %in% c(110))), aes(y=ER, x=nameGen, fill=watering)) +
   geom_boxplot() +
   ylab(expression(paste("Leaf -5 max. expansion rate (", mm^2," ", d^-1, ")"))) +
-  xlab("") +
+  xlab("") + myTheme +
   theme(axis.title = element_text(size=14),
-        axis.text = element_text(size=12, colour="black", angle=90, hjust=1),
+        axis.text.x = element_text(size=12, colour="black", angle=90, hjust=1, vjust=0.5),
         legend.position = "none")
 dev.off()
 system("open ./figures/ER_F_5_genotypes.pdf")
